@@ -1,7 +1,0 @@
-[package]
-name = "rust_backend"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-pyo3 = { version = "0.15", features = ["extension-module"] }
