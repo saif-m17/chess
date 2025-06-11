@@ -1,23 +1,20 @@
 import numpy as np
+from enum import IntEnum
 
-# Pieces
-EMPTY_SQUARE = 0
-
-# White pieces
-WHITE_PAWN = 1
-WHITE_KNIGHT = 2
-WHITE_BISHOP = 3
-WHITE_ROOK = 4
-WHITE_QUEEN = 5
-WHITE_KING = 6
-
-# Black Pieces
-BLACK_PAWN = 7
-BLACK_KNIGHT = 8
-BLACK_BISHOP = 9
-BLACK_ROOK = 10
-BLACK_QUEEN = 11
-BLACK_KING = 12
+class Piece(IntEnum):
+    EMPTY = 0
+    WHITE_PAWN = 1
+    WHITE_KNIGHT = 2
+    WHITE_BISHOP = 3
+    WHITE_ROOK = 4
+    WHITE_QUEEN = 5
+    WHITE_KING = 6
+    BLACK_PAWN = 7
+    BLACK_KNIGHT = 8
+    BLACK_BISHOP = 9
+    BLACK_ROOK = 10
+    BLACK_QUEEN = 11
+    BLACK_KING = 12
 
 class Board():
     def __init__(self):
@@ -30,10 +27,10 @@ class Board():
         """
         Sets up the initial position of the board
         """
-        self.board[0] = [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK]
-        self.board[1] = [BLACK_PAWN] * 8
-        self.board[7] = [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK]
-        self.board[6] = [WHITE_PAWN] * 8
+        self.board[7] = [Piece.BLACK_ROOK, Piece.BLACK_KNIGHT, Piece.BLACK_BISHOP, Piece.BLACK_QUEEN, Piece.BLACK_KING, Piece.BLACK_BISHOP, Piece.BLACK_KNIGHT, Piece.BLACK_ROOK]
+        self.board[6] = [Piece.BLACK_PAWN] * 8
+        self.board[0] = [Piece.WHITE_ROOK, Piece.WHITE_KNIGHT, Piece.WHITE_BISHOP, Piece.WHITE_QUEEN, Piece.WHITE_KING, Piece.WHITE_BISHOP, Piece.WHITE_KNIGHT, Piece.WHITE_ROOK]
+        self.board[1] = [Piece.WHITE_PAWN] * 8
 
     def get_piece(self, row, col):
         """
@@ -45,9 +42,9 @@ class Board():
         """
         Set piece at position row, col
         """
-        if piece == WHITE_KING:
+        if piece == Piece.WHITE_KING:
             self.white_king_pos = (row, col)
-        elif piece == BLACK_KING:
+        elif piece == Piece.BLACK_KING:
             self.black_king_pos = (row, col)
         
         self.board[row][col] = piece
@@ -60,8 +57,10 @@ class Board():
         white_pieces = ['♟', '♞', '♝', '♜', '♛', '♚']
         unicode_pieces = ['.'] + white_pieces + black_pieces
 
-        for i, row in enumerate(self.board):
+        for i, row in enumerate(reversed(self.board)):
             print(f"{8-i} {' '.join(unicode_pieces[piece] for piece in row)}")
         print("  a b c d e f g h")
 
 if __name__ == "__main__":
+    x = Board()
+    x.display()
