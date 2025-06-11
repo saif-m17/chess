@@ -18,7 +18,11 @@ class MoveGenerator():
         """
         # get individual coordinates 
         curr_row, curr_col = from_pos
-        to_row, to_col = to_pos 
+        to_row, to_col = to_pos
+
+        # if curr_poss is equal to new position, return false
+        if curr_row == to_row and curr_col == to_col:
+            return False
 
         # check if color of piece at initial position is correct
         curr_piece = self.board[curr_row][curr_col]
@@ -79,7 +83,20 @@ class MoveGenerator():
                 return to_pos in legal_moves
         
         # Both bishop moves
-        
+        if curr_piece == Piece.WHITE_BISHOP or curr_piece == Piece.BLACK_BISHOP:
+            if abs(to_row - curr_row) != abs(to_col - curr_col):
+                return False
+            
+            sign_row = self._sign(to_row - curr_row)
+            sign_col = self._sign(to_col - curr_col)
+
+            for i in range(1, abs(to_row - curr_row)):
+                if self.board[curr_row + sign_row * i][curr_col + sign_col * i]:
+                    return False
+            if to_square:
+                return not pieces_same_color
+            else:
+                return True
 
                 
 
@@ -105,3 +122,9 @@ class MoveGenerator():
         Returns True if the coordinate is valid.
         """
         return coord >= 0 and coord <= 7
+    
+    def _sign(self, x):
+        """
+        Returns 1 if x > 0, -1 if x < 0, 0 if x = 0. 
+        """
+        return (x > 0) - (x < 0)
