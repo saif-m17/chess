@@ -97,6 +97,29 @@ class MoveGenerator():
                 return not pieces_same_color
             else:
                 return True
+            
+        # Both rook moves
+        if curr_piece == Piece.WHITE_ROOK or curr_piece == Piece.BLACK_ROOK:
+            if curr_row == to_row:
+                num_moved_squares = abs(to_col - curr_col)
+                sign_move = self._sign(to_col - curr_col)
+                for i in range(1, num_moved_squares):
+                    if self.board[curr_row][curr_col + sign_move * i]:
+                        return False
+                if to_square:
+                    return not pieces_same_color
+                else:
+                    return True
+            elif curr_col == to_col:
+                num_moved_squares = abs(to_row - curr_row)
+                sign_move = self._sign(to_row - curr_row)
+                for i in range(1, num_moved_squares):
+                    if self.board[curr_row + sign_move * i][curr_col]:
+                        return False
+                if to_square:
+                    return not pieces_same_color
+                else:
+                    return True
 
                 
 

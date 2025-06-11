@@ -61,6 +61,12 @@ class Board():
             print(f"{8-i} {' '.join(unicode_pieces[piece] for piece in row)}")
         print("  a b c d e f g h")
 
+    def square_to_indices(self, square):
+        """
+        Takes square such as "h4" and transforms it into indices for the board
+        """
+        pass 
+
 if __name__ == "__main__":
     x = Board()
     x.display()
