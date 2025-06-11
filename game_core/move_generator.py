@@ -83,7 +83,12 @@ class MoveGenerator():
                 return to_pos in legal_moves
         
         # Both bishop moves
-        if curr_piece == Piece.WHITE_BISHOP or curr_piece == Piece.BLACK_BISHOP:
+        def bishop_legal_move(from_pos, to_pos):
+            """
+            Returns True of this is a legal bishop move.
+            """
+            curr_row, curr_col = from_pos
+            to_row, to_col = to_pos
             if abs(to_row - curr_row) != abs(to_col - curr_col):
                 return False
             
@@ -97,10 +102,19 @@ class MoveGenerator():
                 return not pieces_same_color
             else:
                 return True
+
+        if curr_piece == Piece.WHITE_BISHOP or curr_piece == Piece.BLACK_BISHOP:
+            return bishop_legal_move(from_pos, to_pos)
             
         # Both rook moves
-        if curr_piece == Piece.WHITE_ROOK or curr_piece == Piece.BLACK_ROOK:
-            if curr_row == to_row:
+        def rook_legal_move(from_pos, to_pos, row=0):
+            """
+            Returns True if this is a legal rook move. If row = 0, assumes rows are the same for move,
+            if row = 1, assumes columns are the same for the move.
+            """
+            curr_row, curr_col = from_pos
+            to_row, to_col = to_pos
+            if row == 0:
                 num_moved_squares = abs(to_col - curr_col)
                 sign_move = self._sign(to_col - curr_col)
                 for i in range(1, num_moved_squares):
@@ -110,7 +124,7 @@ class MoveGenerator():
                     return not pieces_same_color
                 else:
                     return True
-            elif curr_col == to_col:
+            elif row == 1:
                 num_moved_squares = abs(to_row - curr_row)
                 sign_move = self._sign(to_row - curr_row)
                 for i in range(1, num_moved_squares):
@@ -121,10 +135,27 @@ class MoveGenerator():
                 else:
                     return True
 
+        if curr_piece == Piece.WHITE_ROOK or curr_piece == Piece.BLACK_ROOK:
+            if curr_row == to_row:
+                return rook_legal_move(from_pos, to_pos, row=0)
+            elif curr_col == to_col:
+                return rook_legal_move(from_pos, to_pos, row=1)
                 
+        # Both queen moves
+        if curr_piece == Piece.WHITE_QUEEN or curr_piece == Piece.BLACK_QUEEN:
+            row_diff = to_row - curr_row
+            col_diff = to_col - curr_col
+            if row_diff == col_diff:
+                return bishop_legal_move(from_pos, to_pos)
+            elif row_diff == 0:
+                return rook_legal_move(from_pos, to_pos, row=0)
+            elif col_diff == 0:
+                return rook_legal_move(from_pos, to_pos, row=1)
+            else:
+                return False
 
 
-
+            
     def is_in_check(self, color):
         pass
 
@@ -138,6 +169,8 @@ class MoveGenerator():
         """
         Returns True if the piece is white, False otherwise. 
         """
+        if piece < 0 or piece > 12:
+            raise ValueError("Invalid Piece")
         return piece <= 6 and piece != 0
     
     def _is_valid_coordinate(self, coord):
