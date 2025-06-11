@@ -20,8 +20,8 @@ class Board():
     def __init__(self):
         self.board = np.zeros((8,8), dtype=np.int8)
         self._setup_starting_position()
-        self.white_king_pos = (7, 4)
-        self.black_king_pos = (0, 4)
+        self.white_king_pos = (0, 4)
+        self.black_king_pos = (7, 4)
         
     def _setup_starting_position(self):
         """
@@ -32,10 +32,11 @@ class Board():
         self.board[0] = [Piece.WHITE_ROOK, Piece.WHITE_KNIGHT, Piece.WHITE_BISHOP, Piece.WHITE_QUEEN, Piece.WHITE_KING, Piece.WHITE_BISHOP, Piece.WHITE_KNIGHT, Piece.WHITE_ROOK]
         self.board[1] = [Piece.WHITE_PAWN] * 8
 
-    def get_piece(self, row, col):
+    def get_piece(self, coord):
         """
         Returns piece at postion [row, col]
         """
+        row, col = coord
         return self.board[row][col]
     
     def set_piece(self, piece, row, col):
@@ -65,7 +66,13 @@ class Board():
         """
         Takes square such as "h4" and transforms it into indices for the board
         """
-        pass 
+        pass
+
+    def get_white_king_pos(self):
+        return self.white_king_pos
+
+    def get_black_king_pos(self):
+        return self.black_king_pos
 
 if __name__ == "__main__":
     x = Board()

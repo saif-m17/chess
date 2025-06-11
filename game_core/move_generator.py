@@ -4,7 +4,12 @@ from game_core.board import Board, Piece
 class MoveGenerator():
     def __init__(self, board):
         self.board = board
-    
+        self.white_castling_rights = [True, True] # Queenside, Kingside
+        self.black_castling_rights = [True, True] # Queenside, Kingside
+
+        self.white_attacked_squares = []
+        self.black_attacked_squares = []
+
     def get_legal_moves(self, color):
         pass
 
@@ -164,13 +169,67 @@ class MoveGenerator():
                            (curr_row - 1, curr_row + 1),
                            (curr_row - 1, curr_col),
                            (curr_row - 1, curr_col - 1)]
-            if to_square:
-                return not pieces_same_color and to_pos in legal_moves
-            else:
-                return to_pos in legal_moves
-
-
+            if to_pos in legal_moves:
+                if to_square and not pieces_same_color:
+                    return True
+                elif not to_square:
+                    return True
+                else:
+                    return False
             
+            # Castling
+            if color == "black":
+                if self.board.get_black_king_pos() == (7, 4):
+                    # Black kingside castling 
+                    if to_row == curr_row and to_col == curr_col + 2:
+                        in_between_squares = [(7, 5), (7, 6)]
+                        if any(self.board.get_piece(c) for c in in_between_squares):
+                            return False
+                        elif self.board.get_piece((7, 7)) == Piece.BLACK_ROOK and self.black_castling_rights[1]:
+                            return True
+                        else:
+                            return False
+                    # Black queenside castling
+                    elif to_row == curr_row and to_col == curr_col - 2:
+                        in_between_squares = [(7, 3), (7, 2), (7, 1)]
+                        if any(self.board.get_piece(c) for c in in_between_squares):
+                            return False
+                        elif self.board.get_piece((7, 0)) == Piece.BLACK_ROOK and self.black_castling_rights[0]:
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+                else:
+                    return False
+            elif color == "white":
+                if self.board.get_black_white_pos() == (0, 4):
+                    # White kingside castling 
+                    if to_row == curr_row and to_col == curr_col + 2:
+                        in_between_squares = [(0, 5), (0, 6)]
+                        if any(self.board.get_piece(c) for c in in_between_squares):
+                            return False
+                        elif self.board.get_piece((0, 7)) == Piece.WHITE_ROOK and self.white_castling_rights[1]:
+                            return True
+                        else:
+                            return False
+                    # White queenside castling
+                    elif to_row == curr_row and to_col == curr_col - 2:
+                        in_between_squares = [(0, 3), (0, 2), (0, 1)]
+                        if any(self.board.get_piece(c) for c in in_between_squares):
+                            return False
+                        elif self.board.get_piece((0, 0)) == Piece.WHITE_ROOK and self.black_castling_rights[0]:
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+                else:
+                    return False
+            else:
+                return False
+        return False
+
     def is_in_check(self, color):
         return False 
 
