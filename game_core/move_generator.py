@@ -64,7 +64,21 @@ class MoveGenerator():
                 return False
         
         # Both knight moves 
-
+        if curr_piece == Piece.WHITE_KNIGHT or curr_piece == Piece.BLACK_KNIGHT:
+            legal_moves = [(curr_row + 2, curr_col + 1),
+                           (curr_row + 2, curr_col - 1),
+                           (curr_row + 1, curr_col + 2),
+                           (curr_row + 1, curr_col - 2),
+                           (curr_row - 2, curr_col + 1),
+                           (curr_row - 2, curr_col - 1),
+                           (curr_row - 1, curr_col + 2),
+                           (curr_row - 1, curr_col - 2)]
+            if to_square:
+                return to_pos in legal_moves and not pieces_same_color
+            else:
+                return to_pos in legal_moves
+        
+        # Both bishop moves
         
 
                 
