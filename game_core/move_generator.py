@@ -153,11 +153,26 @@ class MoveGenerator():
                 return rook_legal_move(from_pos, to_pos, row=1)
             else:
                 return False
+        
+        # Both king moves (need to still handle checks)
+        if curr_piece == Piece.WHITE_KING or curr_piece == Piece.BLACK_KING:
+            legal_moves = [(curr_row + 1, curr_col + 1),
+                           (curr_row + 1, curr_col),
+                           (curr_row + 1, curr_col - 1),
+                           (curr_row, curr_col + 1),
+                           (curr_row, curr_col - 1),
+                           (curr_row - 1, curr_row + 1),
+                           (curr_row - 1, curr_col),
+                           (curr_row - 1, curr_col - 1)]
+            if to_square:
+                return not pieces_same_color and to_pos in legal_moves
+            else:
+                return to_pos in legal_moves
 
 
             
     def is_in_check(self, color):
-        pass
+        return False 
 
     def would_be_in_check(self, color):
         pass
