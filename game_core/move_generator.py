@@ -311,28 +311,63 @@ class MoveGenerator():
             bishops = new_board.get_black_bishop_pos()
         elif color == "white":
             bishops = new_board.get_white_bishop_pos()
-
-        for bishop in bishops:
-            curr_row, curr_col = bishop
-            directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
-            direction_flags = [True, True, True, True] # False if we encountered a piece in this direction
-            for i in range(1, 8):
-                for j, direction in enumerate(directions):
-                    if not direction_flags[j]:
-                        continue
-                    sign_row, sign_col = direction
-                    new_square = (curr_row + sign_row * i, curr_col + sign_col * i)
-                    if self._is_valid_square(new_square):
-                        attacked_squares.append(new_square)
-                    if new_board.get_piece(new_square):
-                        direction_flags[j] = False
-
+        else:
+            raise ValueError("Invalid color argument")
+        
+        directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+        attacked_squares = self._rook_bishop_queen_attacks_helper(new_board, bishops, directions)
         return attacked_squares
     
     def _get_rook_attacked_squares(self, color, new_board):
         """
         Return list of squares attacked by rooks of color
         """
+        if color == "white":
+            rooks = new_board.get_white_rook_pos()
+        elif color == "black":
+            rooks = new_board.get_black_rook_pos()
+        else:
+            raise ValueError("Invalid color argument.")
+
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        attacked_squares = self._rook_bishop_queen_attacks_helper(new_board, rooks, directions)
+        return attacked_squares
+    
+    def _get_queen_attacked_squares(self, color, new_board):
+        """
+        Returns the squares attacked by color's queen.
+        """
+        if color == "white":
+            queen = [new_board.get_white_queen_pos()]
+        elif color == "black":
+            queen = [new_board.get_black_queen_pos()]
+        else:
+            raise ValueError("Invalid color argument.")
+
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+        attacked_squares = self._rook_bishop_queen_attacks_helper(new_board, queen, directions)
+        return attacked_squares
+    
+    def _rook_bishop_queen_attacks_helper(self, new_board, pieces, directions):
+        """
+        Helper function that takes in directions to explore
+        """
+        attacked_squares = []
+        for piece in pieces:
+            curr_row, curr_col = piece
+            direction_flags = [True for _ in range(len(directions))]
+            for i in range(1, 8):
+                for j, direction in enumerate(directions):
+                    if not direction_flags[j]:
+                        continue
+                    row_indic, col_indic = direction
+                    new_square = (curr_row + row_indic * i, curr_col + col_indic * i)
+                    if self._is_valid_square(new_square):
+                        attacked_squares.append(new_square)
+                    if new_board.get_piece(new_square):
+                        direction_flags[j] = False
+        return attacked_squares
+
 
     def would_be_in_check(self, color):
         pass
