@@ -7,8 +7,8 @@ class MoveGenerator():
         self.white_castling_rights = [True, True] # Queenside, Kingside
         self.black_castling_rights = [True, True] # Queenside, Kingside
 
-        self.white_attacked_squares = []
-        self.black_attacked_squares = []
+        self.white_attacked_squares = [] # squares white pieces attack
+        self.black_attacked_squares = [] # squares black pieces attack 
 
     def get_legal_moves(self, color):
         pass
@@ -231,7 +231,108 @@ class MoveGenerator():
         return False
 
     def is_in_check(self, color):
-        return False 
+        """
+        Returns whether the king is currently in check.
+        Params:
+            - color: "white" or "black", invalid otherwise
+        """
+        if color == "white":
+            return self.board.get_white_king_pos() in self.black_attacked_squares
+        elif color == "black":
+            return self.board.get_black_king_pos() in self.white_attacked_squares
+        else:
+            raise ValueError("invalid color argument.")
+    
+    def get_attacked_squares(self, color, new_board):
+        """
+        Returns a list of the  squares attacked by color from a board position.
+        """
+        pass
+
+    def _get_pawn_attacked_squares(self, color, new_board):
+        """
+        Returns list of squares attacked by pawns 
+        """
+        attacked_squares = []
+        if color == "black":
+            for pawn in new_board.get_black_pawn_pos():
+                move1 = (pawn[0] - 1, pawn[1] + 1)
+                move2 = (pawn[0] - 1, pawn[1] - 1)
+                if self._is_valid_square(move1):
+                    attacked_squares.append(move1)
+                if self._is_valid_square(move2):
+                    attacked_squares.append(move2)
+        elif color == "white":
+            for pawn in new_board.get_white_pawn_pos():
+                move1 = (pawn[0] + 1, pawn[1] + 1)
+                move2 = (pawn[0] + 1, pawn[1] - 1)
+                if self._is_valid_square(move1):
+                    attacked_squares.append(move1)
+                if self._is_valid_square(move2):
+                    attacked_squares.append(move2)
+        else: 
+            raise ValueError("Invalid color argument.")
+        return attacked_squares
+    
+    def _get_knight_attacked_squares(self, color, new_board):
+        """
+        Returns list of squares attacked by knights of color.
+        """
+        attacked_squares = []
+        if color == "black":
+            knights = new_board.get_black_knight_pos()
+        elif color == "white":
+            knights = new_board.get_white_knight_pos()
+        else:
+            raise ValueError("Invalid color argument.")
+        
+        for knight in knights:
+            curr_row, curr_col = knight
+            legal_moves = [(curr_row + 2, curr_col + 1),
+                            (curr_row + 2, curr_col - 1),
+                            (curr_row + 1, curr_col + 2),
+                            (curr_row + 1, curr_col - 2),
+                            (curr_row - 2, curr_col + 1),
+                            (curr_row - 2, curr_col - 1),
+                            (curr_row - 1, curr_col + 2),
+                            (curr_row - 1, curr_col - 2)]
+            for move in legal_moves:
+                if self._is_valid_square(move):
+                    attacked_squares.append(move)
+
+        return attacked_squares
+    
+    def _get_bishop_attacked_squares(self, color, new_board):
+        """
+        Returns list of squares attacked by bishops of color. 
+        """
+        attacked_squares = []
+        if color == "black":
+            bishops = new_board.get_black_bishop_pos()
+        elif color == "white":
+            bishops = new_board.get_white_bishop_pos()
+
+        for bishop in bishops:
+            curr_row, curr_col = bishop
+            directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+            direction_flags = [True, True, True, True] # False if we encountered a piece in this direction
+            for i in range(1, 8):
+                for j, direction in enumerate(directions):
+                    if not direction_flags[j]:
+                        continue
+                    sign_row, sign_col = direction
+                    new_square = (curr_row + sign_row * i, curr_col + sign_col * i)
+                    if self._is_valid_square(new_square):
+                        attacked_squares.append(new_square)
+                    if new_board.get_piece(new_square):
+                        direction_flags[j] = False
+
+        return attacked_squares
+    
+    def _get_rook_attacked_squares(self, color, new_board):
+        """
+        Return list of squares attacked by rooks of color
+        """
 
     def would_be_in_check(self, color):
         pass
@@ -252,6 +353,13 @@ class MoveGenerator():
         Returns True if the coordinate is valid.
         """
         return coord >= 0 and coord <= 7
+    
+    def _is_valid_square(self, square):
+        """
+        Returns true if the square is a valid square on the board.
+        """
+        coord1, coord2 = square
+        return self._is_valid_coordinate(coord1) and self._is_valid_coordinate(coord2)
     
     def _sign(self, x):
         """

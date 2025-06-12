@@ -20,16 +20,31 @@ class Board():
     def __init__(self):
         self.board = np.zeros((8,8), dtype=np.int8)
         self._setup_starting_position()
+
         self.white_king_pos = (0, 4)
+        self.white_pawn_pos = [(1, i) for i in range(8)]
+        self.white_rook_pos = [(0, 0), (0, 7)]
+        self.white_knight_pos = [(0, 1), (0, 6)]
+        self.white_bishop_pos = [(0, 2), (0, 5)]
+        self.white_queen_pos = (0, 3)
+
         self.black_king_pos = (7, 4)
+        self.white_pawn_pos = [(6, i) for i in range(8)]
+        self.white_rook_pos = [(7, 0), (7, 7)]
+        self.white_knight_pos = [(7, 1), (7, 6)]
+        self.white_bishop_pos = [(7, 2), (7, 5)]
+        self.white_queen_pos = (7, 3)
+
         
     def _setup_starting_position(self):
         """
         Sets up the initial position of the board
         """
-        self.board[7] = [Piece.BLACK_ROOK, Piece.BLACK_KNIGHT, Piece.BLACK_BISHOP, Piece.BLACK_QUEEN, Piece.BLACK_KING, Piece.BLACK_BISHOP, Piece.BLACK_KNIGHT, Piece.BLACK_ROOK]
+        self.board[7] = [Piece.BLACK_ROOK, Piece.BLACK_KNIGHT, Piece.BLACK_BISHOP, Piece.BLACK_QUEEN, 
+                         Piece.BLACK_KING, Piece.BLACK_BISHOP, Piece.BLACK_KNIGHT, Piece.BLACK_ROOK]
         self.board[6] = [Piece.BLACK_PAWN] * 8
-        self.board[0] = [Piece.WHITE_ROOK, Piece.WHITE_KNIGHT, Piece.WHITE_BISHOP, Piece.WHITE_QUEEN, Piece.WHITE_KING, Piece.WHITE_BISHOP, Piece.WHITE_KNIGHT, Piece.WHITE_ROOK]
+        self.board[0] = [Piece.WHITE_ROOK, Piece.WHITE_KNIGHT, Piece.WHITE_BISHOP, Piece.WHITE_QUEEN, 
+                         Piece.WHITE_KING, Piece.WHITE_BISHOP, Piece.WHITE_KNIGHT, Piece.WHITE_ROOK]
         self.board[1] = [Piece.WHITE_PAWN] * 8
 
     def get_piece(self, coord):
@@ -70,9 +85,40 @@ class Board():
 
     def get_white_king_pos(self):
         return self.white_king_pos
+    
+    def get_white_queen_pos(self):
+        return self.white_queen_pos
+    
+    def get_white_rook_pos(self):
+        return self.white_rook_pos
+    
+    def get_white_bishop_pos(self):
+        return self.white_bishop_pos
+    
+    def get_white_knight_pos(self):
+        return self.white_knight_pos
+    
+    def get_white_pawn_pos(self):
+        return self.white_pawn_pos
 
     def get_black_king_pos(self):
         return self.black_king_pos
+    
+    def get_black_queen_pos(self):
+        return self.black_queen_pos
+    
+    def get_black_rook_pos(self):
+        return self.black_rook_pos
+    
+    def get_black_bishop_pos(self):
+        return self.black_bishop_pos
+    
+    def get_black_knight_pos(self):
+        return self.black_knight_pos
+    
+    def get_black_pawn_pos(self):
+        return self.black_pawn_pos
+    
 
 if __name__ == "__main__":
     x = Board()
