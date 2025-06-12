@@ -11,7 +11,11 @@ class ChessGame():
         self.winner = None
     
     def make_move(self, from_square, to_square):
-        pass
+        self.board.move(from_square, to_square, in_place=True)
+        if self.current_player == "white":
+            self.current_player = "black"
+        else:
+            self.current_player = "white"
 
     def get_legal_moves(self):
         pass

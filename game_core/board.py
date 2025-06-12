@@ -21,19 +21,20 @@ class Board():
         self.board = np.zeros((8,8), dtype=np.int8)
         self._setup_starting_position()
 
-        self.white_king_pos = (0, 4)
-        self.white_pawn_pos = {(1, i) for i in range(8)}
-        self.white_rook_pos = {(0, 0), (0, 7)}
-        self.white_knight_pos = {(0, 1), (0, 6)}
-        self.white_bishop_pos = {(0, 2), (0, 5)}
-        self.white_queen_pos = (0, 3)
-
-        self.black_king_pos = (7, 4)
-        self.white_pawn_pos = {(6, i) for i in range(8)}
-        self.white_rook_pos = {(7, 0), (7, 7)}
-        self.white_knight_pos = {(7, 1), (7, 6)}
-        self.white_bishop_pos = {(7, 2), (7, 5)}
-        self.white_queen_pos = (7, 3)
+        self.piece_positions = {
+            Piece.WHITE_PAWN: {(1, i) for i in range(8)},
+            Piece.WHITE_KNIGHT: {(0, 1), (0, 6)},
+            Piece.WHITE_BISHOP: {(0, 2), (0, 5)},
+            Piece.WHITE_ROOK: {(0, 0), (0, 7)},
+            Piece.WHITE_QUEEN: (0, 3),
+            Piece.WHITE_KING: (0, 4),
+            Piece.BLACK_PAWN: {(6, i) for i in range(8)},
+            Piece.BLACK_KNIGHT: {(7, 1), (7, 6)},
+            Piece.BLACK_BISHOP: {(7, 2), (7, 5)},
+            Piece.BLACK_ROOK: {(7, 0), (7, 7)}, 
+            Piece.BLACK_QUEEN: (7, 3),
+            Piece.BLACK_KING: (7, 4)
+        }
 
         
     def _setup_starting_position(self):
@@ -54,16 +55,44 @@ class Board():
         row, col = coord
         return self.board[row][col]
     
-    def set_piece(self, piece, row, col):
+    def move(self, from_pos, to_pos, in_place=True, board=None):
         """
-        Set piece at position row, col
+        Move piece from from_pos to to_pos
         """
-        if piece == Piece.WHITE_KING:
-            self.white_king_pos = (row, col)
-        elif piece == Piece.BLACK_KING:
-            self.black_king_pos = (row, col)
-        
-        self.board[row][col] = piece
+        if in_place:
+            curr_piece = self.get_piece(from_pos)
+            if not curr_piece:
+                raise ValueError("Invalid position - no piece found")
+            to_piece = self.get_piece(to_pos)
+            if to_piece:
+                self.piece_positions[to_piece].remove(to_pos)
+
+            self.piece_positions[curr_piece].remove(from_pos)
+            self.piece_positions[curr_piece].add(to_pos)
+
+            self._set_piece(from_pos, Piece.EMPTY, self.board)
+            self._set_piece(to_pos, curr_piece, self.board)
+        else:
+            curr_piece = board.get_piece(from_pos)
+            if not curr_piece:
+                raise ValueError("Invalid position - no piece found")
+            to_piece = board.get_piece(to_pos)
+            if to_piece:
+                board.piece_positions[to_piece].remove(to_pos)
+
+            board.piece_positions[curr_piece].remove(from_pos)
+            board.piece_positions[curr_piece].add(to_pos)
+
+            board._set_piece(from_pos, Piece.EMPTY, board)
+            board._set_piece(to_pos, curr_piece, board)
+            return board
+    
+    def _set_piece(self, square, piece, board):
+        """
+        Set piece at square 
+        """
+        row, col = square
+        board[row][col] = piece
     
     def display(self):
         """
@@ -77,14 +106,6 @@ class Board():
             print(f"{8-i} {' '.join(unicode_pieces[piece] for piece in row)}")
         print("  a b c d e f g h")
 
-    def update_board(self, move, in_place=True):
-        """
-        Update the board with a given move. Doesn't handle checking if the move is
-        illegal. If in place, just update the actual board, otherwise return it.
-        """
-        from_pos, to_pos = move
-        curr_piece = self.get_piece(from_pos)
-
     def square_to_indices(self, square):
         """
         Takes square such as "h4" and transforms it into indices for the board
@@ -92,40 +113,40 @@ class Board():
         pass
 
     def get_white_king_pos(self):
-        return self.white_king_pos
+        return self.piece_positions[Piece.WHITE_KING]
     
     def get_white_queen_pos(self):
-        return self.white_queen_pos
+        return self.piece_positions[Piece.WHITE_QUEEN]
     
     def get_white_rook_pos(self):
-        return self.white_rook_pos
+        return self.piece_positions[Piece.WHITE_ROOK]
     
     def get_white_bishop_pos(self):
-        return self.white_bishop_pos
+        return self.piece_positions[Piece.WHITE_BISHOP]
     
     def get_white_knight_pos(self):
-        return self.white_knight_pos
+        return self.piece_positions[Piece.WHITE_KNIGHT]
     
     def get_white_pawn_pos(self):
-        return self.white_pawn_pos
+        return self.piece_positions[Piece.WHITE_PAWN]
 
     def get_black_king_pos(self):
-        return self.black_king_pos
+        return self.piece_positions[Piece.BLACK_KING]
     
     def get_black_queen_pos(self):
-        return self.black_queen_pos
+        return self.piece_positions[Piece.BLACK_QUEEN]
     
     def get_black_rook_pos(self):
-        return self.black_rook_pos
+        return self.piece_positions[Piece.BLACK_ROOK]
     
     def get_black_bishop_pos(self):
-        return self.black_bishop_pos
+        return self.piece_positions[Piece.BLACK_BISHOP]
     
     def get_black_knight_pos(self):
-        return self.black_knight_pos
+        return self.piece_positions[Piece.BLACK_KNIGHT]
     
     def get_black_pawn_pos(self):
-        return self.black_pawn_pos
+        return self.piece_positions[Piece.BLACK_PAWN]
     
 
 if __name__ == "__main__":

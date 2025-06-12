@@ -22,7 +22,7 @@ class MoveGenerator():
             - color: "white" or "black"
         """
         legal_ignoring_checks = self._is_legal_move_ignoring_checks(from_pos, to_pos, color)
-        updated_board = self.board.update_board((from_pos, to_pos), in_place=False)
+        updated_board = self.board.move((from_pos, to_pos), in_place=False, board=self.board)
         in_check_after_move = self.is_in_check(updated_board, color)
         return legal_ignoring_checks and not in_check_after_move
 
