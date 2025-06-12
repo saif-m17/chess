@@ -247,7 +247,13 @@ class MoveGenerator():
         """
         Returns a list of the  squares attacked by color from a board position.
         """
-        pass
+        attacked_squares = {}
+        attacked_squares.update(self._get_pawn_attacked_squares(color, new_board))
+        attacked_squares.update(self._get_knight_attacked_squares(color, new_board))
+        attacked_squares.update(self._get_bishop_attacked_squares(color, new_board))
+        attacked_squares.update(self._get_queen_attacked_squares(color, new_board))
+        attacked_squares.update(self._get_rook_attacked_squares(color, new_board))
+
 
     def _get_pawn_attacked_squares(self, color, new_board):
         """
@@ -348,6 +354,32 @@ class MoveGenerator():
         attacked_squares = self._rook_bishop_queen_attacks_helper(new_board, queen, directions)
         return attacked_squares
     
+    def _get_king_attacked_squares(self, color, new_board):
+        """
+        Returns which squares are attacked by color's king.
+        """
+        if color == "white":
+            king = new_board.get_white_king_pos()
+        elif color == "black":
+            king = new_board.get_black_king_pos()
+        else:
+            raise ValueError("Invalid color argument")
+        attacked_squares = []
+        curr_row, curr_col = king 
+        legal_moves = [(curr_row + 1, curr_col + 1),
+                (curr_row + 1, curr_col),
+                (curr_row + 1, curr_col - 1),
+                (curr_row, curr_col + 1),
+                (curr_row, curr_col - 1),
+                (curr_row - 1, curr_row + 1),
+                (curr_row - 1, curr_col),
+                (curr_row - 1, curr_col - 1)]
+        for move in legal_moves:
+            if self._is_valid_square(move):
+                attacked_squares.append(move)
+
+        return attacked_squares
+        
     def _rook_bishop_queen_attacks_helper(self, new_board, pieces, directions):
         """
         Helper function that takes in directions to explore
