@@ -148,6 +148,9 @@ class Board():
     def get_black_pawn_pos(self):
         return self.piece_positions[Piece.BLACK_PAWN]
     
+    def get_board(self):
+        return self.board
+    
 
 if __name__ == "__main__":
     x = Board()

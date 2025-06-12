@@ -28,3 +28,6 @@ class ChessGame():
 
     def display(self):
         self.board.display()
+    
+    def get_player(self):
+        return self.current_player
