@@ -1,9 +1,11 @@
 import numpy as np
 from game_core.board import Piece, Board
+from game_core.move_generator import MoveGenerator
 
 class ChessGame():
     def __init__(self):
         self.board = Board()
+        self.move_gen = MoveGenerator(self.board)
         self.current_player = "white"
         self.game_over = False
         self.winner = None

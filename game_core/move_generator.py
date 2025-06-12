@@ -15,11 +15,21 @@ class MoveGenerator():
 
     def is_legal_move(self, from_pos, to_pos, color):
         """
-        Checks whether move from from_pos to to_pos for player color is legal.
+        Determines whether a move is legal.
         Params:
             - from_pos: tuple (row, col) of starting position
             - to_pos: tuple (row, col) of ending position
             - color: "white" or "black"
+        """
+        legal_ignoring_checks = self._is_legal_move_ignoring_checks(from_pos, to_pos, color)
+        updated_board = self.board.update_board((from_pos, to_pos), in_place=False)
+        in_check_after_move = self.is_in_check(updated_board, color)
+        return legal_ignoring_checks and not in_check_after_move
+
+    def _is_legal_move_ignoring_checks(self, from_pos, to_pos, color):
+        """
+        Checks whether move from from_pos to to_pos for player color is legal without
+        considering checks.
         """
         # get individual coordinates 
         curr_row, curr_col = from_pos
@@ -230,16 +240,16 @@ class MoveGenerator():
                 return False
         return False
 
-    def is_in_check(self, color):
+    def is_in_check(self, new_board, color):
         """
         Returns whether the king is currently in check.
         Params:
             - color: "white" or "black", invalid otherwise
         """
         if color == "white":
-            return self.board.get_white_king_pos() in self.black_attacked_squares
+            return new_board.get_white_king_pos() in self.black_attacked_squares
         elif color == "black":
-            return self.board.get_black_king_pos() in self.white_attacked_squares
+            return new_board.get_black_king_pos() in self.white_attacked_squares
         else:
             raise ValueError("invalid color argument.")
     
@@ -253,6 +263,8 @@ class MoveGenerator():
         attacked_squares.update(self._get_bishop_attacked_squares(color, new_board))
         attacked_squares.update(self._get_queen_attacked_squares(color, new_board))
         attacked_squares.update(self._get_rook_attacked_squares(color, new_board))
+        attacked_squares.update(self._get_king_attacked_squares(color, new_board))
+        return attacked_squares
 
 
     def _get_pawn_attacked_squares(self, color, new_board):
