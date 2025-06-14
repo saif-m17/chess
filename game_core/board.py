@@ -1,5 +1,6 @@
 import numpy as np
 from enum import IntEnum
+import copy
 
 class Piece(IntEnum):
     EMPTY = 0
@@ -32,8 +33,8 @@ class Board():
             Piece.BLACK_KNIGHT: {(7, 1), (7, 6)},
             Piece.BLACK_BISHOP: {(7, 2), (7, 5)},
             Piece.BLACK_ROOK: {(7, 0), (7, 7)}, 
-            Piece.BLACK_QUEEN: (7, 3),
-            Piece.BLACK_KING: (7, 4)
+            Piece.BLACK_QUEEN: {(7, 3)},
+            Piece.BLACK_KING: {(7, 4)}
         }
 
         
@@ -55,12 +56,12 @@ class Board():
         row, col = coord
         return self.board[row][col]
     
-    def move(self, from_pos, to_pos, in_place=True, board=None):
+    def move(self, from_pos, to_pos, in_place=True):
         """
         Move piece from from_pos to to_pos
         """
         if in_place:
-            curr_piece = self.get_piece(from_pos)
+            curr_piece = self.board[from_pos[0]][from_pos[1]]
             if not curr_piece:
                 raise ValueError("Invalid position - no piece found")
             to_piece = self.get_piece(to_pos)
@@ -70,29 +71,36 @@ class Board():
             self.piece_positions[curr_piece].remove(from_pos)
             self.piece_positions[curr_piece].add(to_pos)
 
-            self._set_piece(from_pos, Piece.EMPTY, self.board)
-            self._set_piece(to_pos, curr_piece, self.board)
+            self._set_piece(from_pos, Piece.EMPTY)
+            self._set_piece(to_pos, curr_piece)
         else:
-            curr_piece = board.get_piece(from_pos)
+            new_board = Board()
+            new_board.board = self.board.copy()
+            new_board.piece_positions = copy.deepcopy(self.piece_positions)
+
+            curr_piece = new_board.get_piece(from_pos)
             if not curr_piece:
                 raise ValueError("Invalid position - no piece found")
-            to_piece = board.get_piece(to_pos)
+            to_piece = new_board.get_piece(to_pos)
             if to_piece:
-                board.piece_positions[to_piece].remove(to_pos)
+                new_board.piece_positions[to_piece].remove(to_pos)
 
-            board.piece_positions[curr_piece].remove(from_pos)
-            board.piece_positions[curr_piece].add(to_pos)
+            new_board.piece_positions[curr_piece].remove(from_pos)
+            new_board.piece_positions[curr_piece].add(to_pos)
 
-            board._set_piece(from_pos, Piece.EMPTY, board)
-            board._set_piece(to_pos, curr_piece, board)
-            return board
+            new_board._set_piece(from_pos, Piece.EMPTY, new_board)
+            new_board._set_piece(to_pos, curr_piece, new_board)
+            return new_board
     
-    def _set_piece(self, square, piece, board):
+    def _set_piece(self, square, piece, board=None):
         """
         Set piece at square 
         """
         row, col = square
-        board[row][col] = piece
+        if board is not None:
+            board.board[row][col] = piece
+        else:
+            self.board[row, col] = piece
     
     def display(self):
         """

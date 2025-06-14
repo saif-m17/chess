@@ -1,5 +1,5 @@
 import numpy as np
-from game_core.board import Board, Piece
+from board import Board, Piece
 
 class MoveGenerator():
     def __init__(self, board):
@@ -22,7 +22,7 @@ class MoveGenerator():
             - color: "white" or "black"
         """
         legal_ignoring_checks = self._is_legal_move_ignoring_checks(from_pos, to_pos, color)
-        updated_board = self.board.move((from_pos, to_pos), in_place=False, board=self.board)
+        updated_board = self.board.move(from_pos, to_pos, in_place=False)
         in_check_after_move = self.is_in_check(updated_board, color)
         return legal_ignoring_checks and not in_check_after_move
 
@@ -40,8 +40,8 @@ class MoveGenerator():
             return False
 
         # check if color of piece at initial position is correct
-        curr_piece = self.board[curr_row][curr_col]
-        to_square = self.board[to_row][to_col]
+        curr_piece = self.board.get_piece(from_pos)
+        to_square = self.board.get_piece(to_pos)
         is_white = self._is_piece_white(curr_piece)
         if is_white and color == "black" or not is_white and color == "white":
             return False
@@ -57,7 +57,7 @@ class MoveGenerator():
             if curr_col == to_col and not to_square:
                 if to_row == curr_row + 1:
                     return True
-                elif curr_row == 1 and to_row == 3 and not self.board[2][curr_col]:
+                elif curr_row == 1 and to_row == 3 and not self.board.get_piece((2,curr_col)):
                     return True
             elif to_col == curr_col + 1 or to_col == curr_col - 1:
                 if to_row != curr_row + 1:
@@ -72,7 +72,7 @@ class MoveGenerator():
             if curr_col == to_col and not to_square:
                 if to_row == curr_row - 1:
                     return True
-                elif curr_row == 6 and to_row == 4 and not self.board[5][curr_col]:
+                elif curr_row == 6 and to_row == 4 and not self.board.get_piece((5,curr_col)):
                     return True
             elif to_col == curr_col + 1 or to_col == curr_col -1:
                 if to_row != curr_row - 1:
@@ -111,7 +111,7 @@ class MoveGenerator():
             sign_col = self._sign(to_col - curr_col)
 
             for i in range(1, abs(to_row - curr_row)):
-                if self.board[curr_row + sign_row * i][curr_col + sign_col * i]:
+                if self.board.get_piece((curr_row + sign_row * i,curr_col + sign_col * i)):
                     return False
             if to_square:
                 return not pieces_same_color
@@ -133,7 +133,7 @@ class MoveGenerator():
                 num_moved_squares = abs(to_col - curr_col)
                 sign_move = self._sign(to_col - curr_col)
                 for i in range(1, num_moved_squares):
-                    if self.board[curr_row][curr_col + sign_move * i]:
+                    if self.board.get_piece((curr_row,curr_col + sign_move * i)):
                         return False
                 if to_square:
                     return not pieces_same_color
@@ -143,7 +143,7 @@ class MoveGenerator():
                 num_moved_squares = abs(to_row - curr_row)
                 sign_move = self._sign(to_row - curr_row)
                 for i in range(1, num_moved_squares):
-                    if self.board[curr_row + sign_move * i][curr_col]:
+                    if self.board.get_piece((curr_row + sign_move * i, curr_col)):
                         return False
                 if to_square:
                     return not pieces_same_color
