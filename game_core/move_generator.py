@@ -158,16 +158,7 @@ class MoveGenerator():
                 
         # Both queen moves
         if curr_piece == Piece.WHITE_QUEEN or curr_piece == Piece.BLACK_QUEEN:
-            row_diff = to_row - curr_row
-            col_diff = to_col - curr_col
-            if row_diff == col_diff:
-                return bishop_legal_move(from_pos, to_pos)
-            elif row_diff == 0:
-                return rook_legal_move(from_pos, to_pos, row=0)
-            elif col_diff == 0:
-                return rook_legal_move(from_pos, to_pos, row=1)
-            else:
-                return False
+            return rook_legal_move(from_pos, to_pos, 0) or rook_legal_move(from_pos, to_pos, 1) or bishop_legal_move(from_pos, to_pos)
         
         # Both king moves (need to still handle checks)
         if curr_piece == Piece.WHITE_KING or curr_piece == Piece.BLACK_KING:
