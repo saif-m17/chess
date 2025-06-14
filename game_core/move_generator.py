@@ -238,7 +238,7 @@ class MoveGenerator():
             - color: "white" or "black", invalid otherwise
         """
         if color == "white":
-            return new_board.get_white_king_pos() in self.black_attacked_squares
+            return new_board.get_white_king_pos() in self.black_attacked_squares # don't updated attacked squares yet - dont handle checks right as a result
         elif color == "black":
             return new_board.get_black_king_pos() in self.white_attacked_squares
         else:
