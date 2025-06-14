@@ -27,8 +27,8 @@ class Board():
             Piece.WHITE_KNIGHT: {(0, 1), (0, 6)},
             Piece.WHITE_BISHOP: {(0, 2), (0, 5)},
             Piece.WHITE_ROOK: {(0, 0), (0, 7)},
-            Piece.WHITE_QUEEN: (0, 3),
-            Piece.WHITE_KING: (0, 4),
+            Piece.WHITE_QUEEN: {(0, 3)},
+            Piece.WHITE_KING: {(0, 4)},
             Piece.BLACK_PAWN: {(6, i) for i in range(8)},
             Piece.BLACK_KNIGHT: {(7, 1), (7, 6)},
             Piece.BLACK_BISHOP: {(7, 2), (7, 5)},
@@ -76,7 +76,8 @@ class Board():
         else:
             new_board = Board()
             new_board.board = self.board.copy()
-            new_board.piece_positions = copy.deepcopy(self.piece_positions)
+            new_board.piece_positions = { piece: {pos for pos in positions} if isinstance(positions, set) else {positions} 
+                                         for piece, positions in self.piece_positions.items() }
 
             curr_piece = new_board.get_piece(from_pos)
             if not curr_piece:
