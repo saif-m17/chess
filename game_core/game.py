@@ -43,4 +43,5 @@ if __name__ == "__main__":
     game.display()
     game.make_move((3, 4), (4, 3))
     game.display()
+    attacked_squares = game.move_gen.get_attacked_squares("white", game.board)
 

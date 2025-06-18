@@ -238,9 +238,11 @@ class MoveGenerator():
             - color: "white" or "black", invalid otherwise
         """
         if color == "white":
-            return new_board.get_white_king_pos() in self.black_attacked_squares # don't updated attacked squares yet - dont handle checks right as a result
+            attacked_squares = self.get_attacked_squares("black", new_board)
+            return next(iter(new_board.get_white_king_pos())) in attacked_squares # don't updated attacked squares yet - dont handle checks right as a result
         elif color == "black":
-            return new_board.get_black_king_pos() in self.white_attacked_squares
+            attacked_squares = self.get_attacked_squares("white", new_board)
+            return next(iter(new_board.get_black_king_pos())) in attacked_squares
         else:
             raise ValueError("invalid color argument.")
     
@@ -248,7 +250,7 @@ class MoveGenerator():
         """
         Returns a list of the  squares attacked by color from a board position.
         """
-        attacked_squares = {}
+        attacked_squares = set()
         attacked_squares.update(self._get_pawn_attacked_squares(color, new_board))
         attacked_squares.update(self._get_knight_attacked_squares(color, new_board))
         attacked_squares.update(self._get_bishop_attacked_squares(color, new_board))
@@ -347,9 +349,9 @@ class MoveGenerator():
         Returns the squares attacked by color's queen.
         """
         if color == "white":
-            queen = [new_board.get_white_queen_pos()]
+            queen = list(new_board.get_white_queen_pos())
         elif color == "black":
-            queen = [new_board.get_black_queen_pos()]
+            queen = list(new_board.get_black_queen_pos())
         else:
             raise ValueError("Invalid color argument.")
 
@@ -362,9 +364,9 @@ class MoveGenerator():
         Returns which squares are attacked by color's king.
         """
         if color == "white":
-            king = new_board.get_white_king_pos()
+            king = next(iter(new_board.get_white_king_pos()))
         elif color == "black":
-            king = new_board.get_black_king_pos()
+            king = next(iter(new_board.get_black_king_pos()))
         else:
             raise ValueError("Invalid color argument")
         attacked_squares = []
@@ -374,7 +376,7 @@ class MoveGenerator():
                 (curr_row + 1, curr_col - 1),
                 (curr_row, curr_col + 1),
                 (curr_row, curr_col - 1),
-                (curr_row - 1, curr_row + 1),
+                (curr_row - 1, curr_col + 1),
                 (curr_row - 1, curr_col),
                 (curr_row - 1, curr_col - 1)]
         for move in legal_moves:
@@ -393,9 +395,12 @@ class MoveGenerator():
             direction_flags = [True for _ in range(len(directions))]
             for i in range(1, 8):
                 for j, direction in enumerate(directions):
+                    row_indic, col_indic = direction
                     if not direction_flags[j]:
                         continue
-                    row_indic, col_indic = direction
+                    elif not self._is_valid_square((curr_row + row_indic * i, curr_col + col_indic * i)):
+                        direction_flags[j] = False
+                        continue
                     new_square = (curr_row + row_indic * i, curr_col + col_indic * i)
                     if self._is_valid_square(new_square):
                         attacked_squares.append(new_square)
