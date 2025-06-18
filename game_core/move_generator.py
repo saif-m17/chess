@@ -160,7 +160,7 @@ class MoveGenerator():
         if curr_piece == Piece.WHITE_QUEEN or curr_piece == Piece.BLACK_QUEEN:
             return rook_legal_move(from_pos, to_pos, 0) or rook_legal_move(from_pos, to_pos, 1) or bishop_legal_move(from_pos, to_pos)
         
-        # Both king moves (need to still handle checks)
+        # Both king moves
         if curr_piece == Piece.WHITE_KING or curr_piece == Piece.BLACK_KING:
             legal_moves = [(curr_row + 1, curr_col + 1),
                            (curr_row + 1, curr_col),
@@ -235,11 +235,12 @@ class MoveGenerator():
         """
         Returns whether the king is currently in check.
         Params:
+            - new_board: board to use to check if the king is in check
             - color: "white" or "black", invalid otherwise
         """
         if color == "white":
             attacked_squares = self.get_attacked_squares("black", new_board)
-            return next(iter(new_board.get_white_king_pos())) in attacked_squares # don't updated attacked squares yet - dont handle checks right as a result
+            return next(iter(new_board.get_white_king_pos())) in attacked_squares 
         elif color == "black":
             attacked_squares = self.get_attacked_squares("white", new_board)
             return next(iter(new_board.get_black_king_pos())) in attacked_squares
@@ -258,38 +259,88 @@ class MoveGenerator():
         attacked_squares.update(self._get_rook_attacked_squares(color, new_board))
         attacked_squares.update(self._get_king_attacked_squares(color, new_board))
         return attacked_squares
+    
+    ################################################
+    #                                              #
+    #     Attacked Squares/Legal Moves Helpers     #
+    #                                              #
+    ################################################
 
 
-    def _get_pawn_attacked_squares(self, color, new_board):
+    def _get_pawn_attacked_squares(self, color, new_board, sep=False):
         """
-        Returns list of squares attacked by pawns 
+        Returns list of squares attacked by pawns
+        Params: 
+            - color: "white" or "black"
+            - new_board: Board object we get the attacked squares from
+            - sep: whether or not to separate out squares attacked by move, only
+            include legal moves. 
         """
+
         attacked_squares = []
+        legal_moves = {}
         if color == "black":
             for pawn in new_board.get_black_pawn_pos():
                 move1 = (pawn[0] - 1, pawn[1] + 1)
                 move2 = (pawn[0] - 1, pawn[1] - 1)
-                if self._is_valid_square(move1):
-                    attacked_squares.append(move1)
-                if self._is_valid_square(move2):
-                    attacked_squares.append(move2)
+
+                m1_is_valid = self._is_valid_square(move1)
+                m2_is_valid = self._is_valid_square(move2)
+                if sep: # in progress
+                    piece_1 = new_board.get_piece(move1)
+                    piece_2 = new_board.get_piece(move2)
+                    attacked_squares[pawn] = []
+                    if m1_is_valid and self._is_piece_white(piece_1):
+                        attacked_squares[pawn].append(move1)
+                    if m2_is_valid and self._is_piece_white(piece_2):
+                        attacked_squares[pawn].append(move2)
+
+                    if pawn[0] == 6 and not self.board.get_piece((5, pawn[1])) and not self.board.get_piece((4, pawn[1])):
+                        attacked_squares[pawn].append((4, pawn[0]))
+                    move3 = (pawn[0] -1, pawn[1])
+                    if self._is_valid_square(move3) and not self.board.get_piece(move3):
+                        attacked_squares[pawn].append(move3)
+                else:
+                    if m1_is_valid:
+                        attacked_squares.append(move1)
+                    if m2_is_valid:
+                        attacked_squares.append(move2)
         elif color == "white":
             for pawn in new_board.get_white_pawn_pos():
                 move1 = (pawn[0] + 1, pawn[1] + 1)
                 move2 = (pawn[0] + 1, pawn[1] - 1)
-                if self._is_valid_square(move1):
-                    attacked_squares.append(move1)
-                if self._is_valid_square(move2):
-                    attacked_squares.append(move2)
+                
+                m1_is_valid = self._is_valid_square(move1)
+                m2_is_valid = self._is_valid_square(move2)
+                if sep:
+                    piece_1 = new_board.get_piece(move1)
+                    piece_2 = new_board.get_piece(move2)
+                    attacked_squares[pawn] = []
+                    if m1_is_valid and self._is_piece_black(piece_1):
+                        attacked_squares[pawn].append(move1)
+                    if m2_is_valid and self._is_piece_white(piece_2):
+                        attacked_squares[pawn].append(move2)
+
+                    if pawn[0] == 1 and not self.board.get_piece((2, pawn[1])) and not self.board.get_piece((3, pawn[1])):
+                        attacked_squares[pawn].append((3, pawn[0]))
+                    move3 = (pawn[0] + 1, pawn[1])
+                    if self._is_valid_square(move3) and not self.board.get_piece(move3):
+                        attacked_squares[pawn].append(move3)
+                else:
+                    if m1_is_valid:
+                        attacked_squares.append(move1)
+                    if m2_is_valid:
+                        attacked_squares.append(move2)
         else: 
             raise ValueError("Invalid color argument.")
-        return attacked_squares
+        return legal_moves if sep else attacked_squares
     
-    def _get_knight_attacked_squares(self, color, new_board):
+    def _get_knight_attacked_squares(self, color, new_board, sep=False):
         """
         Returns list of squares attacked by knights of color.
         """
         attacked_squares = []
+        legal_moves_map = {}
         if color == "black":
             knights = new_board.get_black_knight_pos()
         elif color == "white":
@@ -299,6 +350,8 @@ class MoveGenerator():
         
         for knight in knights:
             curr_row, curr_col = knight
+            if sep:
+                legal_moves_map[knight] = []
             legal_moves = [(curr_row + 2, curr_col + 1),
                             (curr_row + 2, curr_col - 1),
                             (curr_row + 1, curr_col + 2),
@@ -308,12 +361,16 @@ class MoveGenerator():
                             (curr_row - 1, curr_col + 2),
                             (curr_row - 1, curr_col - 2)]
             for move in legal_moves:
-                if self._is_valid_square(move):
-                    attacked_squares.append(move)
+                if sep:
+                    if self._is_valid_square(move) and self._get_color(self.board.get_piece(move)) != color:
+                        legal_moves_map[knight].append(move)
+                else:
+                    if self._is_valid_square(move):
+                        attacked_squares.append(move)
 
         return attacked_squares
     
-    def _get_bishop_attacked_squares(self, color, new_board):
+    def _get_bishop_attacked_squares(self, color, new_board, sep=False):
         """
         Returns list of squares attacked by bishops of color. 
         """
@@ -329,7 +386,7 @@ class MoveGenerator():
         attacked_squares = self._rook_bishop_queen_attacks_helper(new_board, bishops, directions)
         return attacked_squares
     
-    def _get_rook_attacked_squares(self, color, new_board):
+    def _get_rook_attacked_squares(self, color, new_board, sep=False):
         """
         Return list of squares attacked by rooks of color
         """
@@ -344,7 +401,7 @@ class MoveGenerator():
         attacked_squares = self._rook_bishop_queen_attacks_helper(new_board, rooks, directions)
         return attacked_squares
     
-    def _get_queen_attacked_squares(self, color, new_board):
+    def _get_queen_attacked_squares(self, color, new_board, sep=False):
         """
         Returns the squares attacked by color's queen.
         """
@@ -385,7 +442,7 @@ class MoveGenerator():
 
         return attacked_squares
         
-    def _rook_bishop_queen_attacks_helper(self, new_board, pieces, directions):
+    def _rook_bishop_queen_attacks_helper(self, new_board, pieces, directions, sep=False):
         """
         Helper function that takes in directions to explore
         """
@@ -408,12 +465,11 @@ class MoveGenerator():
                         direction_flags[j] = False
         return attacked_squares
 
-
-    def would_be_in_check(self, color):
-        pass
-
-    def get_piece_moves(self, row, col):
-        pass 
+    #########################################
+    #                                       #
+    #   General Purpose Helper Functions    #
+    #                                       #
+    #########################################
 
     def _is_piece_white(self, piece):
         """
@@ -423,6 +479,26 @@ class MoveGenerator():
             raise ValueError("Invalid Piece")
         return piece <= 6 and piece != 0
     
+    def _is_piece_black(self, piece):
+        """
+        Returns True if the piece is Black, False otherwise. 
+        """
+        if piece < 0 or piece > 12:
+            raise ValueError("Invalid Piece")
+        return piece <= 12 and piece > 6
+    
+    def _get_color(self, piece):
+        """
+        Returns "white" if piece is white, "black" if piece is black, and
+        None if empty square.
+        """
+        if self._is_piece_white(piece):
+            return "white"
+        elif self._is_piece_black(piece):
+            return "black"
+        else:
+            return None
+
     def _is_valid_coordinate(self, coord):
         """
         Returns True if the coordinate is valid.
