@@ -18,12 +18,17 @@ class ChessGame():
         if not self.move_gen.is_legal_move(from_square, to_square, self.current_player):
             raise ValueError("Illegal move given.")
         
-        # _, checkmate = self.move_gen.get_legal_moves(self.current_player)
-        # if checkmate:
-        #     self.game_over = True
-        
-        self.winner = "white" if self.current_player == "black" else "black"
+        legal_moves, checkmate, draw = self.move_gen.get_legal_moves(self.current_player)
+        if checkmate:
+            self.game_over = True
+            self.winner = "white" if self.current_player == "black" else "black"
+        elif draw:
+            self.game_over = True
+            self.winner = "draw"
+
+        print(f"Checkmate = {checkmate}, Draw = {draw}, legal_moves = {legal_moves}")
         self.board.move(from_square, to_square, in_place=True)
+
         if self.current_player == "white":
             self.current_player = "black"
         else:
@@ -59,5 +64,13 @@ class ChessGame():
     
 if __name__ == "__main__":
     game = ChessGame()
+    legal_moves, checkmate = game.move_gen.get_legal_moves("white")
+    print(legal_moves)
+    print(checkmate)
+    game.make_move((1, 3), (2, 3))
+    legal_moves, checkmate = game.move_gen.get_legal_moves("black")
+    print(legal_moves)
+    print(checkmate)
+
 
 

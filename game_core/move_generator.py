@@ -1,5 +1,4 @@
-import numpy as np
-from board import Board, Piece
+from board import Piece
 
 class MoveGenerator():
     def __init__(self, board):
@@ -27,14 +26,20 @@ class MoveGenerator():
         legal_moves.update(self._get_queen_attacked_squares(color, self.board, True))
         legal_moves.update(self._get_king_attacked_squares(color, self.board, True))
 
-        if self.is_in_check(self.board, color):
-            for from_pos, to_positions in legal_moves.items():
-                for to_pos in to_positions:
-                    updated_board = self.board.move(from_pos, to_pos, in_place=False)
-                    if self.is_in_check(updated_board, color):
-                        legal_moves[from_pos].remove(to_pos)
-        checkmate = all(len(piece_moves) == 0 for piece_moves in legal_moves.values())
-        return legal_moves, checkmate
+        legal_moves_final = {}
+
+        for from_pos, to_positions in legal_moves.items():
+            legal_moves_final[from_pos] = set()
+            for to_pos in to_positions:
+                updated_board = self.board.move(from_pos, to_pos, in_place=False)
+                if not self.is_in_check(updated_board, color):
+                    legal_moves_final[from_pos].add(to_pos)
+
+        no_legal_moves = all(len(piece_moves) == 0 for piece_moves in legal_moves_final.values())
+
+        checkmate = self.is_in_check(self.board, color) and no_legal_moves
+        draw = not self.is_in_check(self.board, color) and no_legal_moves
+        return legal_moves_final, checkmate, draw
 
     def is_legal_move(self, from_pos, to_pos, color):
         """
@@ -310,8 +315,10 @@ class MoveGenerator():
                 m1_is_valid = self._is_valid_square(move1)
                 m2_is_valid = self._is_valid_square(move2)
                 if sep: # in progress
-                    piece_1 = new_board.get_piece(move1)
-                    piece_2 = new_board.get_piece(move2)
+                    if m1_is_valid:
+                        piece_1 = new_board.get_piece(move1)
+                    if m2_is_valid:
+                        piece_2 = new_board.get_piece(move2)
                     legal_moves[pawn] = set()
                     if m1_is_valid and self._is_piece_white(piece_1):
                         legal_moves[pawn].add(move1)
@@ -319,7 +326,7 @@ class MoveGenerator():
                         legal_moves[pawn].add(move2)
 
                     if pawn[0] == 6 and not self.board.get_piece((5, pawn[1])) and not self.board.get_piece((4, pawn[1])):
-                        legal_moves[pawn].add((4, pawn[0]))
+                        legal_moves[pawn].add((4, pawn[1]))
                     move3 = (pawn[0] -1, pawn[1])
                     if self._is_valid_square(move3) and not self.board.get_piece(move3):
                         legal_moves[pawn].add(move3)
@@ -336,8 +343,10 @@ class MoveGenerator():
                 m1_is_valid = self._is_valid_square(move1)
                 m2_is_valid = self._is_valid_square(move2)
                 if sep:
-                    piece_1 = new_board.get_piece(move1)
-                    piece_2 = new_board.get_piece(move2)
+                    if m1_is_valid:
+                        piece_1 = new_board.get_piece(move1)
+                    if m2_is_valid:
+                        piece_2 = new_board.get_piece(move2)
                     legal_moves[pawn] = set()
                     if m1_is_valid and self._is_piece_black(piece_1):
                         legal_moves[pawn].add(move1)
@@ -345,7 +354,7 @@ class MoveGenerator():
                         legal_moves[pawn].add(move2)
 
                     if pawn[0] == 1 and not self.board.get_piece((2, pawn[1])) and not self.board.get_piece((3, pawn[1])):
-                        legal_moves[pawn].add((3, pawn[0]))
+                        legal_moves[pawn].add((3, pawn[1]))
                     move3 = (pawn[0] + 1, pawn[1])
                     if self._is_valid_square(move3) and not self.board.get_piece(move3):
                         legal_moves[pawn].add(move3)
@@ -406,7 +415,7 @@ class MoveGenerator():
             raise ValueError("Invalid color argument")
         
         directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
-        return self._rook_bishop_queen_attacks_helper(new_board, bishops, directions, sep=sep)
+        return self._rook_bishop_queen_attacks_helper(new_board, bishops, directions, sep=sep, color=color)
     
     def _get_rook_attacked_squares(self, color, new_board, sep=False):
         """
@@ -420,7 +429,7 @@ class MoveGenerator():
             raise ValueError("Invalid color argument.")
 
         directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-        return self._rook_bishop_queen_attacks_helper(new_board, rooks, directions, sep=sep)
+        return self._rook_bishop_queen_attacks_helper(new_board, rooks, directions, sep=sep, color=color)
     
     def _get_queen_attacked_squares(self, color, new_board, sep=False):
         """
@@ -434,7 +443,7 @@ class MoveGenerator():
             raise ValueError("Invalid color argument.")
 
         directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
-        return self._rook_bishop_queen_attacks_helper(new_board, queen, directions, sep=sep)
+        return self._rook_bishop_queen_attacks_helper(new_board, queen, directions, sep=sep, color=color)
     
     def _get_king_attacked_squares(self, color, new_board, sep=False):
         """
