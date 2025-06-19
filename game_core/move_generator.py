@@ -11,7 +11,30 @@ class MoveGenerator():
         self.black_attacked_squares = [] # squares black pieces attack 
 
     def get_legal_moves(self, color):
-        pass
+        """
+        Returns a dictionary of legal moves where key is the position of the
+        starting square, and the values are a list of all possible places that
+        piece can move to. Returns a boolean of whether player is in checkmate. 
+        Params:
+            - color: "white" or "black"
+            - new_board: 
+        """
+        legal_moves = {}
+        legal_moves.update(self._get_pawn_attacked_squares(color, self.board, True))
+        legal_moves.update(self._get_bishop_attacked_squares(color, self.board, True))
+        legal_moves.update(self._get_knight_attacked_squares(color, self.board, True))
+        legal_moves.update(self._get_rook_attacked_squares(color, self.board, True))
+        legal_moves.update(self._get_queen_attacked_squares(color, self.board, True))
+        legal_moves.update(self._get_king_attacked_squares(color, self.board, True))
+
+        if self.is_in_check(self.board, color):
+            for from_pos, to_positions in legal_moves.items():
+                for to_pos in to_positions:
+                    updated_board = self.board.move(from_pos, to_pos, in_place=False)
+                    if self.is_in_check(updated_board, color):
+                        legal_moves[from_pos].remove(to_pos)
+        checkmate = all(len(piece_moves) == 0 for piece_moves in legal_moves.values())
+        return legal_moves, checkmate
 
     def is_legal_move(self, from_pos, to_pos, color):
         """
@@ -167,7 +190,7 @@ class MoveGenerator():
                            (curr_row + 1, curr_col - 1),
                            (curr_row, curr_col + 1),
                            (curr_row, curr_col - 1),
-                           (curr_row - 1, curr_row + 1),
+                           (curr_row - 1, curr_col + 1),
                            (curr_row - 1, curr_col),
                            (curr_row - 1, curr_col - 1)]
             if to_pos in legal_moves:
@@ -204,7 +227,7 @@ class MoveGenerator():
                 else:
                     return False
             elif color == "white":
-                if self.board.get_black_white_pos() == (0, 4):
+                if self.board.get_white_king_pos() == (0, 4):
                     # White kingside castling 
                     if to_row == curr_row and to_col == curr_col + 2:
                         in_between_squares = [(0, 5), (0, 6)]
@@ -219,7 +242,7 @@ class MoveGenerator():
                         in_between_squares = [(0, 3), (0, 2), (0, 1)]
                         if any(self.board.get_piece(c) for c in in_between_squares):
                             return False
-                        elif self.board.get_piece((0, 0)) == Piece.WHITE_ROOK and self.black_castling_rights[0]:
+                        elif self.board.get_piece((0, 0)) == Piece.WHITE_ROOK and self.white_castling_rights[0]:
                             return True
                         else:
                             return False
@@ -276,9 +299,9 @@ class MoveGenerator():
             - sep: whether or not to separate out squares attacked by move, only
             include legal moves. 
         """
-
         attacked_squares = []
         legal_moves = {}
+
         if color == "black":
             for pawn in new_board.get_black_pawn_pos():
                 move1 = (pawn[0] - 1, pawn[1] + 1)
@@ -289,17 +312,17 @@ class MoveGenerator():
                 if sep: # in progress
                     piece_1 = new_board.get_piece(move1)
                     piece_2 = new_board.get_piece(move2)
-                    attacked_squares[pawn] = []
+                    legal_moves[pawn] = set()
                     if m1_is_valid and self._is_piece_white(piece_1):
-                        attacked_squares[pawn].append(move1)
+                        legal_moves[pawn].add(move1)
                     if m2_is_valid and self._is_piece_white(piece_2):
-                        attacked_squares[pawn].append(move2)
+                        legal_moves[pawn].add(move2)
 
                     if pawn[0] == 6 and not self.board.get_piece((5, pawn[1])) and not self.board.get_piece((4, pawn[1])):
-                        attacked_squares[pawn].append((4, pawn[0]))
+                        legal_moves[pawn].add((4, pawn[0]))
                     move3 = (pawn[0] -1, pawn[1])
                     if self._is_valid_square(move3) and not self.board.get_piece(move3):
-                        attacked_squares[pawn].append(move3)
+                        legal_moves[pawn].add(move3)
                 else:
                     if m1_is_valid:
                         attacked_squares.append(move1)
@@ -315,17 +338,17 @@ class MoveGenerator():
                 if sep:
                     piece_1 = new_board.get_piece(move1)
                     piece_2 = new_board.get_piece(move2)
-                    attacked_squares[pawn] = []
+                    legal_moves[pawn] = set()
                     if m1_is_valid and self._is_piece_black(piece_1):
-                        attacked_squares[pawn].append(move1)
+                        legal_moves[pawn].add(move1)
                     if m2_is_valid and self._is_piece_white(piece_2):
-                        attacked_squares[pawn].append(move2)
+                        legal_moves[pawn].add(move2)
 
                     if pawn[0] == 1 and not self.board.get_piece((2, pawn[1])) and not self.board.get_piece((3, pawn[1])):
-                        attacked_squares[pawn].append((3, pawn[0]))
+                        legal_moves[pawn].add((3, pawn[0]))
                     move3 = (pawn[0] + 1, pawn[1])
                     if self._is_valid_square(move3) and not self.board.get_piece(move3):
-                        attacked_squares[pawn].append(move3)
+                        legal_moves[pawn].add(move3)
                 else:
                     if m1_is_valid:
                         attacked_squares.append(move1)
@@ -351,7 +374,7 @@ class MoveGenerator():
         for knight in knights:
             curr_row, curr_col = knight
             if sep:
-                legal_moves_map[knight] = []
+                legal_moves_map[knight] = set()
             legal_moves = [(curr_row + 2, curr_col + 1),
                             (curr_row + 2, curr_col - 1),
                             (curr_row + 1, curr_col + 2),
@@ -363,18 +386,18 @@ class MoveGenerator():
             for move in legal_moves:
                 if sep:
                     if self._is_valid_square(move) and self._get_color(self.board.get_piece(move)) != color:
-                        legal_moves_map[knight].append(move)
+                        legal_moves_map[knight].add(move)
                 else:
                     if self._is_valid_square(move):
                         attacked_squares.append(move)
-
+        if sep: 
+            return legal_moves_map
         return attacked_squares
     
     def _get_bishop_attacked_squares(self, color, new_board, sep=False):
         """
         Returns list of squares attacked by bishops of color. 
         """
-        attacked_squares = []
         if color == "black":
             bishops = new_board.get_black_bishop_pos()
         elif color == "white":
@@ -383,8 +406,7 @@ class MoveGenerator():
             raise ValueError("Invalid color argument")
         
         directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
-        attacked_squares = self._rook_bishop_queen_attacks_helper(new_board, bishops, directions)
-        return attacked_squares
+        return self._rook_bishop_queen_attacks_helper(new_board, bishops, directions, sep=sep)
     
     def _get_rook_attacked_squares(self, color, new_board, sep=False):
         """
@@ -398,8 +420,7 @@ class MoveGenerator():
             raise ValueError("Invalid color argument.")
 
         directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-        attacked_squares = self._rook_bishop_queen_attacks_helper(new_board, rooks, directions)
-        return attacked_squares
+        return self._rook_bishop_queen_attacks_helper(new_board, rooks, directions, sep=sep)
     
     def _get_queen_attacked_squares(self, color, new_board, sep=False):
         """
@@ -413,10 +434,9 @@ class MoveGenerator():
             raise ValueError("Invalid color argument.")
 
         directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
-        attacked_squares = self._rook_bishop_queen_attacks_helper(new_board, queen, directions)
-        return attacked_squares
+        return self._rook_bishop_queen_attacks_helper(new_board, queen, directions, sep=sep)
     
-    def _get_king_attacked_squares(self, color, new_board):
+    def _get_king_attacked_squares(self, color, new_board, sep=False):
         """
         Returns which squares are attacked by color's king.
         """
@@ -427,6 +447,7 @@ class MoveGenerator():
         else:
             raise ValueError("Invalid color argument")
         attacked_squares = []
+        legal_moves_map = {}
         curr_row, curr_col = king 
         legal_moves = [(curr_row + 1, curr_col + 1),
                 (curr_row + 1, curr_col),
@@ -436,20 +457,30 @@ class MoveGenerator():
                 (curr_row - 1, curr_col + 1),
                 (curr_row - 1, curr_col),
                 (curr_row - 1, curr_col - 1)]
+        if sep:
+            legal_moves_map[king] = set()
         for move in legal_moves:
-            if self._is_valid_square(move):
-                attacked_squares.append(move)
-
-        return attacked_squares
+            if sep:
+                if self._is_valid_square(move) and self._get_color(self.board.get_piece(move)) != color:
+                    legal_moves_map[king].add(move)
+            else:
+                if self._is_valid_square(move):
+                    attacked_squares.append(move)
         
-    def _rook_bishop_queen_attacks_helper(self, new_board, pieces, directions, sep=False):
+        return attacked_squares if not sep else legal_moves_map
+        
+    def _rook_bishop_queen_attacks_helper(self, new_board, pieces, directions, sep=False, color=None):
         """
         Helper function that takes in directions to explore
         """
         attacked_squares = []
+        legal_moves = {}
+
         for piece in pieces:
             curr_row, curr_col = piece
             direction_flags = [True for _ in range(len(directions))]
+            if sep:
+                legal_moves[piece] = set()
             for i in range(1, 8):
                 for j, direction in enumerate(directions):
                     row_indic, col_indic = direction
@@ -459,11 +490,18 @@ class MoveGenerator():
                         direction_flags[j] = False
                         continue
                     new_square = (curr_row + row_indic * i, curr_col + col_indic * i)
-                    if self._is_valid_square(new_square):
+                    if sep:
+                        if not new_board.get_piece(new_square):
+                            legal_moves[piece].add(new_square)
+                        elif new_board.get_piece(new_square) and self._get_color(new_board.get_piece(new_square)) != color:
+                            legal_moves[piece].add(new_square)
+                            direction_flags[j] = False
+                    else:
                         attacked_squares.append(new_square)
-                    if new_board.get_piece(new_square):
-                        direction_flags[j] = False
-        return attacked_squares
+                        if new_board.get_piece(new_square):
+                            direction_flags[j] = False
+
+        return legal_moves if sep else attacked_squares
 
     #########################################
     #                                       #
@@ -517,3 +555,22 @@ class MoveGenerator():
         Returns 1 if x > 0, -1 if x < 0, 0 if x = 0. 
         """
         return (x > 0) - (x < 0)
+    
+    def update_castling_rights(self, color, side=0):
+        """
+        Updates castling rights for color king. 
+        Params:
+            - color: "white" or "black"
+            - side: -1 for both, 0 for queenside, 1 for kingside
+        """
+        if color == "white":
+            c_rights = self.white_castling_rights
+        else:
+            c_rights = self.black_castling_rights
+
+        if side == -1:
+            c_rights = [False, False]
+        else:
+            c_rights[side] = False
+
+
