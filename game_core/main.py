@@ -24,12 +24,12 @@ def load_piece_images():
         Piece.BLACK_KING: "black-king",
     }
     for key, name in names.items():
-        image = pygame.image.load(f"pieces-basic-png/{name}.png")
+        image = pygame.image.load(f"assets/pieces-basic-png/{name}.png")
         pieces[key] = pygame.transform.scale(image, (TILE_SIZE, TILE_SIZE))
     return pieces
 
 def draw_board(screen, game, piece_images, skip_pos=None):
-    screen.blit(pygame.image.load("boards-png/rect-8x8.png"), (0, 0))
+    screen.blit(pygame.image.load("assets/boards-png/rect-8x8.png"), (0, 0))
     for row in range(8):
         for col in range(8):
             if skip_pos == (row, col):
