@@ -41,7 +41,7 @@ class ChessGame():
         else:
             self.current_player = "white"
         
-        legal_moves, checkmate, draw = self.move_gen.get_legal_moves(self.current_player)
+        _, checkmate, draw = self.move_gen.get_legal_moves(self.current_player)
         if checkmate:
             self.game_over = True
             self.winner = "white" if self.current_player == "black" else "black"

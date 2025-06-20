@@ -92,6 +92,13 @@ class MoveGenerator():
                     return False
                 elif to_square and not pieces_same_color:
                     return True
+                elif curr_row == 4 and to_row == 5:
+                    prev_black_move = self.board.get_previous_move("black")
+                    if not prev_black_move:
+                        return False
+                    black_move_from, black_move_to = prev_black_move
+                    if black_move_from[0] == 6 and black_move_to[0] == 4 and black_move_to[1] == to_col and self.board.get_piece((4, to_col)) == Piece.BLACK_PAWN:
+                        return True
             else:
                 return False
         
@@ -107,6 +114,13 @@ class MoveGenerator():
                     return False
                 elif to_square and not pieces_same_color:
                     return True
+                elif curr_row == 3 and to_row == 2:
+                    prev_white_move = self.board.get_previous_move("white")
+                    if not prev_white_move:
+                        return False
+                    white_move_from, white_move_to = prev_white_move
+                    if white_move_from[0] == 1 and white_move_to[0] == 3 and white_move_to[1] == to_col and self.board.get_piece((3, to_col)) == Piece.WHITE_PAWN:
+                        return True
             else:
                 return False
         
@@ -181,7 +195,6 @@ class MoveGenerator():
                     return not pieces_same_color
                 else:
                     return True
-
 
         if curr_piece == Piece.WHITE_ROOK or curr_piece == Piece.BLACK_ROOK:
             if curr_row == to_row:

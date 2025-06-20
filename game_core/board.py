@@ -37,6 +37,9 @@ class Board():
             Piece.BLACK_KING: {(7, 4)}
         }
 
+        self.prev_white_moves = []
+        self.prev_black_moves = []
+
         
     def _setup_starting_position(self):
         """
@@ -65,6 +68,11 @@ class Board():
             if not curr_piece:
                 raise ValueError("Invalid position - no piece found")
             
+            if self._is_piece_white(curr_piece):
+                self.prev_white_moves.append((from_pos, to_pos))
+            elif self._is_piece_black(curr_piece):
+                self.prev_black_moves.append((from_pos, to_pos))
+            
             is_castling = ((curr_piece == Piece.WHITE_KING or curr_piece == Piece.BLACK_KING) and 
                       abs(to_pos[1] - from_pos[1]) == 2 and 
                       to_pos[0] == from_pos[0])
@@ -91,6 +99,11 @@ class Board():
             curr_piece = new_board.get_piece(from_pos)
             if not curr_piece:
                 raise ValueError("Invalid position - no piece found")
+            
+            if new_board._is_piece_white(curr_piece):
+                new_board.prev_white_moves.append((from_pos, to_pos))
+            elif new_board._is_piece_black(curr_piece):
+                new_board.prev_black_moves.append((from_pos, to_pos))
             
             is_castling = ((curr_piece == Piece.WHITE_KING or curr_piece == Piece.BLACK_KING) and 
                       abs(to_pos[1] - from_pos[1]) == 2 and 
@@ -170,7 +183,18 @@ class Board():
         """
         row, col = square
         return f"{chr(col + ord('a'))}{8-row}"
-
+    
+    def get_previous_move(self, color):
+        """
+        Returns previous move of color.
+        """
+        if color == "white":
+            return self.prev_white_moves[-1]
+        elif color == "black":
+            return self.prev_black_moves[-1]
+        else:
+            raise ValueError("Invalid color argument.")
+        
     def get_white_king_pos(self):
         return self.piece_positions[Piece.WHITE_KING]
     
@@ -210,6 +234,21 @@ class Board():
     def get_board(self):
         return self.board
     
+    def _is_piece_white(self, piece):
+        """
+        Returns True if the piece is white, False otherwise. 
+        """
+        if piece < 0 or piece > 12:
+            raise ValueError("Invalid Piece")
+        return piece <= 6 and piece != 0
+    
+    def _is_piece_black(self, piece):
+        """
+        Returns True if the piece is Black, False otherwise. 
+        """
+        if piece < 0 or piece > 12:
+            raise ValueError("Invalid Piece")
+        return piece <= 12 and piece > 6
 
 if __name__ == "__main__":
     x = Board()
