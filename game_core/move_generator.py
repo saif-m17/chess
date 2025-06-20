@@ -223,7 +223,12 @@ class MoveGenerator():
                 if next(iter(self.board.get_black_king_pos())) == (7, 4):
                     # Black kingside castling 
                     if to_row == curr_row and to_col == curr_col + 2:
+                        if self.is_in_check(self.board, color):
+                            return False
                         in_between_squares = [(7, 5), (7, 6)]
+                        attacked_squares = self.get_attacked_squares("white", self.board)
+                        if any(x in attacked_squares for x in in_between_squares):
+                            return False
                         if any(self.board.get_piece(c) for c in in_between_squares):
                             return False
                         elif self.board.get_piece((7, 7)) == Piece.BLACK_ROOK and self.black_castling_rights[1]:
@@ -232,7 +237,13 @@ class MoveGenerator():
                             return False
                     # Black queenside castling
                     elif to_row == curr_row and to_col == curr_col - 2:
+                        if self.is_in_check(self.board, color):
+                            return False
                         in_between_squares = [(7, 3), (7, 2), (7, 1)]
+                        through_squares = [(7, 2), (7, 3)]
+                        attacked_squares = self.get_attacked_squares("white", self.board)
+                        if any(x in attacked_squares for x in through_squares):
+                            return False
                         if any(self.board.get_piece(c) for c in in_between_squares):
                             return False
                         elif self.board.get_piece((7, 0)) == Piece.BLACK_ROOK and self.black_castling_rights[0]:
@@ -250,7 +261,7 @@ class MoveGenerator():
                         if self.is_in_check(self.board, color):
                             return False
                         in_between_squares = [(0, 5), (0, 6)]
-                        attacked_squares = self.get_attacked_squares(self._opposite_color(color), self.board)
+                        attacked_squares = self.get_attacked_squares("black", self.board)
                         if any(x in attacked_squares for x in in_between_squares):
                             return False
                         if any(self.board.get_piece(c) for c in in_between_squares):
@@ -264,8 +275,8 @@ class MoveGenerator():
                         if self.is_in_check(self.board, color):
                             return False
                         in_between_squares = [(0, 3), (0, 2), (0, 1)]
-                        through_squares = [(0, 2), (0, 1)]
-                        attacked_squares = self.get_attacked_squares(self._opposite_color(color), self.board)
+                        through_squares = [(0, 2), (0, 3)]
+                        attacked_squares = self.get_attacked_squares("black", self.board)
                         if any(x in attacked_squares for x in through_squares):
                             return False
                         if any(self.board.get_piece(c) for c in in_between_squares):
