@@ -245,9 +245,14 @@ class MoveGenerator():
                     return False
             elif color == "white":
                 if next(iter(self.board.get_white_king_pos())) == (0, 4):
-                    # White kingside castling 
+                    # White kingside castling
                     if to_row == curr_row and to_col == curr_col + 2:
+                        if self.is_in_check(self.board, color):
+                            return False
                         in_between_squares = [(0, 5), (0, 6)]
+                        attacked_squares = self.get_attacked_squares(self._opposite_color(color), self.board)
+                        if any(x in attacked_squares for x in in_between_squares):
+                            return False
                         if any(self.board.get_piece(c) for c in in_between_squares):
                             return False
                         elif self.board.get_piece((0, 7)) == Piece.WHITE_ROOK and self.white_castling_rights[1]:
@@ -256,7 +261,13 @@ class MoveGenerator():
                             return False
                     # White queenside castling
                     elif to_row == curr_row and to_col == curr_col - 2:
+                        if self.is_in_check(self.board, color):
+                            return False
                         in_between_squares = [(0, 3), (0, 2), (0, 1)]
+                        through_squares = [(0, 2), (0, 1)]
+                        attacked_squares = self.get_attacked_squares(self._opposite_color(color), self.board)
+                        if any(x in attacked_squares for x in through_squares):
+                            return False
                         if any(self.board.get_piece(c) for c in in_between_squares):
                             return False
                         elif self.board.get_piece((0, 0)) == Piece.WHITE_ROOK and self.white_castling_rights[0]:
@@ -594,5 +605,11 @@ class MoveGenerator():
                 self.black_castling_rights = [False, False]
             else:
                 self.black_castling_rights[side] = False
+    
+    def _opposite_color(self, color):
+        """
+        Returns the opposite of color.
+        """
+        return "black" if color == "white" else "black"
 
 
