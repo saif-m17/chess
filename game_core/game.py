@@ -49,8 +49,6 @@ class ChessGame():
             self.game_over = True
             self.winner = "draw"
         
-        print(f"Checkmate = {checkmate}, Draw = {draw}, legal_moves = {legal_moves}")
-        
 
     def get_legal_moves(self):
         """
