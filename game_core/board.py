@@ -77,8 +77,13 @@ class Board():
                       abs(to_pos[1] - from_pos[1]) == 2 and 
                       to_pos[0] == from_pos[0])
             
+            is_en_passent = ((curr_piece == Piece.WHITE_PAWN and from_pos[0] == 4 and to_pos[0] == 5 and not self.get_piece(to_pos) and self.get_piece((4, to_pos[1]))) or
+                             (curr_piece == Piece.BLACK_PAWN and from_pos[0] == 3 and to_pos[0] == 2 and not self.get_piece(to_pos) and self.get_piece((3, to_pos[1]))))
+            
             if is_castling:
                 self._handle_castling_move(from_pos, to_pos, curr_piece)
+            elif is_en_passent:
+                self._handle_en_passent(from_pos, to_pos, curr_piece)
             else:
                 to_piece = self.get_piece(to_pos)
                 if to_piece:
@@ -109,8 +114,13 @@ class Board():
                       abs(to_pos[1] - from_pos[1]) == 2 and 
                       to_pos[0] == from_pos[0])
             
+            is_en_passent = ((curr_piece == Piece.WHITE_PAWN and from_pos[0] == 4 and to_pos[0] == 5 and not new_board.get_piece(to_pos) and new_board.get_piece((4, to_pos[1]))) or
+                             (curr_piece == Piece.BLACK_PAWN and from_pos[0] == 3 and to_pos[0] == 2 and not new_board.get_piece(to_pos) and new_board.get_piece((3, to_pos[1]))))
+            
             if is_castling:
                 new_board._handle_castling_move(from_pos, to_pos, curr_piece)
+            elif is_en_passent:
+                new_board._handle_en_passent(from_pos, to_pos, curr_piece)
             else:
                 to_piece = new_board.get_piece(to_pos)
                 if to_piece:
@@ -140,13 +150,12 @@ class Board():
         king_from_row, king_from_col = king_from
         king_to_row, king_to_col = king_to
         
-        # Determine if this is kingside or queenside castling
         if king_to_col > king_from_col:
-            # Kingside castling (king moves right)
+            # Kingside castling
             rook_from = (king_from_row, 7)  
             rook_to = (king_to_row, king_to_col - 1) 
         else:
-            # Queenside castling (king moves left)
+            # Queenside castling
             rook_from = (king_from_row, 0) 
             rook_to = (king_to_row, king_to_col + 1)  
         
@@ -164,6 +173,25 @@ class Board():
         self.piece_positions[rook_piece].add(rook_to)
         self._set_piece(rook_from, Piece.EMPTY)
         self._set_piece(rook_to, rook_piece)
+
+    def _handle_en_passent(self, pawn_from, pawn_to, pawn_piece):
+        """
+        Appropriately handles making the move en passent. 
+        """
+        is_white = self._is_piece_white(pawn_piece)
+        if is_white:
+            coords = (4, pawn_to[1])
+            self._set_piece(coords, Piece.EMPTY)
+            self.piece_positions[Piece.BLACK_PAWN].remove(coords)
+        else:
+            coords = (3, pawn_to[1])
+            self._set_piece(coords, Piece.EMPTY)
+            self.piece_positions[Piece.WHITE_PAWN].remove(coords)
+        self.piece_positions[pawn_piece].remove(pawn_from)
+        self.piece_positions[pawn_piece].add(pawn_to)
+        self._set_piece(pawn_from, Piece.EMPTY)
+        self._set_piece(pawn_to, pawn_piece)
+        
     
     def display(self):
         """
