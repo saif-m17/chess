@@ -18,21 +18,39 @@ class ChessGame():
         if not self.move_gen.is_legal_move(from_square, to_square, self.current_player):
             raise ValueError("Illegal move given.")
         
-        legal_moves, checkmate, draw = self.move_gen.get_legal_moves(self.current_player)
-        if checkmate:
-            self.game_over = True
-            self.winner = "white" if self.current_player == "black" else "black"
-        elif draw:
-            self.game_over = True
-            self.winner = "draw"
-
-        print(f"Checkmate = {checkmate}, Draw = {draw}, legal_moves = {legal_moves}")
+        piece = self.board.get_piece(from_square)
         self.board.move(from_square, to_square, in_place=True)
-
+        
+        if piece == Piece.WHITE_KING:
+            self.move_gen.update_castling_rights("white", -1)  # Both sides
+        elif piece == Piece.BLACK_KING:
+            self.move_gen.update_castling_rights("black", -1)  # Both sides
+        elif piece == Piece.WHITE_ROOK:
+            if from_square == (0, 0):  # Queenside rook
+                self.move_gen.update_castling_rights("white", 0)
+            elif from_square == (0, 7):  # Kingside rook
+                self.move_gen.update_castling_rights("white", 1)
+        elif piece == Piece.BLACK_ROOK:
+            if from_square == (7, 0):  # Queenside rook
+                self.move_gen.update_castling_rights("black", 0)
+            elif from_square == (7, 7):  # Kingside rook
+                self.move_gen.update_castling_rights("black", 1)
+        
         if self.current_player == "white":
             self.current_player = "black"
         else:
             self.current_player = "white"
+        
+        # legal_moves, checkmate, draw = self.move_gen.get_legal_moves(self.current_player)
+        # if checkmate:
+        #     self.game_over = True
+        #     self.winner = "white" if self.current_player == "black" else "black"
+        # elif draw:
+        #     self.game_over = True
+        #     self.winner = "draw"
+        
+        # print(f"Checkmate = {checkmate}, Draw = {draw}, legal_moves = {legal_moves}")
+        # 
 
     def get_legal_moves(self):
         """
@@ -64,13 +82,14 @@ class ChessGame():
     
 if __name__ == "__main__":
     game = ChessGame()
-    legal_moves, checkmate = game.move_gen.get_legal_moves("white")
+    legal_moves, checkmate, draw = game.move_gen.get_legal_moves("white")
     print(legal_moves)
     print(checkmate)
     game.make_move((1, 3), (2, 3))
-    legal_moves, checkmate = game.move_gen.get_legal_moves("black")
+    legal_moves, checkmate, draw = game.move_gen.get_legal_moves("black")
     print(legal_moves)
     print(checkmate)
+    print(draw)
 
 
 

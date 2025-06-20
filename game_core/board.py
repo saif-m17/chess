@@ -64,33 +64,50 @@ class Board():
             curr_piece = self.board[from_pos[0]][from_pos[1]]
             if not curr_piece:
                 raise ValueError("Invalid position - no piece found")
-            to_piece = self.get_piece(to_pos)
-            if to_piece:
-                self.piece_positions[to_piece].remove(to_pos)
+            
+            is_castling = ((curr_piece == Piece.WHITE_KING or curr_piece == Piece.BLACK_KING) and 
+                      abs(to_pos[1] - from_pos[1]) == 2 and 
+                      to_pos[0] == from_pos[0])
+            
+            if is_castling:
+                self._handle_castling_move(from_pos, to_pos, curr_piece)
+            else:
+                to_piece = self.get_piece(to_pos)
+                if to_piece:
+                    self.piece_positions[to_piece].remove(to_pos)
 
-            self.piece_positions[curr_piece].remove(from_pos)
-            self.piece_positions[curr_piece].add(to_pos)
+                self.piece_positions[curr_piece].remove(from_pos)
+                self.piece_positions[curr_piece].add(to_pos)
 
-            self._set_piece(from_pos, Piece.EMPTY)
-            self._set_piece(to_pos, curr_piece)
+                self._set_piece(from_pos, Piece.EMPTY)
+                self._set_piece(to_pos, curr_piece)
         else:
-            new_board = Board()
-            new_board.board = self.board.copy()
-            new_board.piece_positions = { piece: {pos for pos in positions} if isinstance(positions, set) else {positions} 
-                                         for piece, positions in self.piece_positions.items() }
+            new_board = copy.deepcopy(self)
+
+            new_board.piece_positions = {}
+            for piece, positions in self.piece_positions.items():
+                new_board.piece_positions[piece] = set(positions)
 
             curr_piece = new_board.get_piece(from_pos)
             if not curr_piece:
                 raise ValueError("Invalid position - no piece found")
-            to_piece = new_board.get_piece(to_pos)
-            if to_piece:
-                new_board.piece_positions[to_piece].remove(to_pos)
+            
+            is_castling = ((curr_piece == Piece.WHITE_KING or curr_piece == Piece.BLACK_KING) and 
+                      abs(to_pos[1] - from_pos[1]) == 2 and 
+                      to_pos[0] == from_pos[0])
+            
+            if is_castling:
+                new_board._handle_castling_move(from_pos, to_pos, curr_piece)
+            else:
+                to_piece = new_board.get_piece(to_pos)
+                if to_piece:
+                    new_board.piece_positions[to_piece].remove(to_pos)
 
-            new_board.piece_positions[curr_piece].remove(from_pos)
-            new_board.piece_positions[curr_piece].add(to_pos)
+                new_board.piece_positions[curr_piece].remove(from_pos)
+                new_board.piece_positions[curr_piece].add(to_pos)
 
-            new_board._set_piece(from_pos, Piece.EMPTY, new_board)
-            new_board._set_piece(to_pos, curr_piece, new_board)
+                new_board._set_piece(from_pos, Piece.EMPTY, new_board)
+                new_board._set_piece(to_pos, curr_piece, new_board)
             return new_board
     
     def _set_piece(self, square, piece, board=None):
@@ -101,7 +118,39 @@ class Board():
         if board is not None:
             board.board[row][col] = piece
         else:
-            self.board[row, col] = piece
+            self.board[row][col] = piece
+
+    def _handle_castling_move(self, king_from, king_to, king_piece):
+        """
+        Helper function to move the king and rook during castling.
+        """
+        king_from_row, king_from_col = king_from
+        king_to_row, king_to_col = king_to
+        
+        # Determine if this is kingside or queenside castling
+        if king_to_col > king_from_col:
+            # Kingside castling (king moves right)
+            rook_from = (king_from_row, 7)  
+            rook_to = (king_to_row, king_to_col - 1) 
+        else:
+            # Queenside castling (king moves left)
+            rook_from = (king_from_row, 0) 
+            rook_to = (king_to_row, king_to_col + 1)  
+        
+        # Get the rook piece
+        rook_piece = self.get_piece(rook_from)
+        
+        # Move the king
+        self.piece_positions[king_piece].remove(king_from)
+        self.piece_positions[king_piece].add(king_to)
+        self._set_piece(king_from, Piece.EMPTY)
+        self._set_piece(king_to, king_piece)
+        
+        # Move the rook
+        self.piece_positions[rook_piece].remove(rook_from)
+        self.piece_positions[rook_piece].add(rook_to)
+        self._set_piece(rook_from, Piece.EMPTY)
+        self._set_piece(rook_to, rook_piece)
     
     def display(self):
         """
@@ -115,11 +164,12 @@ class Board():
             print(f"{8-i} {' '.join(unicode_pieces[piece] for piece in row)}")
         print("  a b c d e f g h")
 
-    def square_to_indices(self, square):
+    def indices_to_square(self, square):
         """
-        Takes square such as "h4" and transforms it into indices for the board
+        Takes board indices and turns them into chess notation (i.e. h4)
         """
-        pass
+        row, col = square
+        return f"{chr(col + ord('a'))}{8-row}"
 
     def get_white_king_pos(self):
         return self.piece_positions[Piece.WHITE_KING]

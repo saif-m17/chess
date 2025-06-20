@@ -157,6 +157,10 @@ class MoveGenerator():
             """
             curr_row, curr_col = from_pos
             to_row, to_col = to_pos
+            if curr_row == to_row and curr_col == to_col:
+                return False 
+            if curr_row != to_row and curr_col != to_col:
+                return False
             if row == 0:
                 num_moved_squares = abs(to_col - curr_col)
                 sign_move = self._sign(to_col - curr_col)
@@ -178,15 +182,23 @@ class MoveGenerator():
                 else:
                     return True
 
+
         if curr_piece == Piece.WHITE_ROOK or curr_piece == Piece.BLACK_ROOK:
             if curr_row == to_row:
                 return rook_legal_move(from_pos, to_pos, row=0)
             elif curr_col == to_col:
                 return rook_legal_move(from_pos, to_pos, row=1)
+            else:
+                return False
                 
         # Both queen moves
         if curr_piece == Piece.WHITE_QUEEN or curr_piece == Piece.BLACK_QUEEN:
-            return rook_legal_move(from_pos, to_pos, 0) or rook_legal_move(from_pos, to_pos, 1) or bishop_legal_move(from_pos, to_pos)
+            if curr_row == to_row:
+                return rook_legal_move(from_pos, to_pos, 0)
+            elif curr_col == to_col:
+                return rook_legal_move(from_pos, to_pos, 1)
+            else:
+                return bishop_legal_move(from_pos, to_pos)
         
         # Both king moves
         if curr_piece == Piece.WHITE_KING or curr_piece == Piece.BLACK_KING:
@@ -208,7 +220,7 @@ class MoveGenerator():
             
             # Castling
             if color == "black":
-                if self.board.get_black_king_pos() == (7, 4):
+                if next(iter(self.board.get_black_king_pos())) == (7, 4):
                     # Black kingside castling 
                     if to_row == curr_row and to_col == curr_col + 2:
                         in_between_squares = [(7, 5), (7, 6)]
@@ -232,7 +244,7 @@ class MoveGenerator():
                 else:
                     return False
             elif color == "white":
-                if self.board.get_white_king_pos() == (0, 4):
+                if next(iter(self.board.get_white_king_pos())) == (0, 4):
                     # White kingside castling 
                     if to_row == curr_row and to_col == curr_col + 2:
                         in_between_squares = [(0, 5), (0, 6)]
@@ -325,10 +337,10 @@ class MoveGenerator():
                     if m2_is_valid and self._is_piece_white(piece_2):
                         legal_moves[pawn].add(move2)
 
-                    if pawn[0] == 6 and not self.board.get_piece((5, pawn[1])) and not self.board.get_piece((4, pawn[1])):
+                    if pawn[0] == 6 and not new_board.get_piece((5, pawn[1])) and not new_board.get_piece((4, pawn[1])):
                         legal_moves[pawn].add((4, pawn[1]))
                     move3 = (pawn[0] -1, pawn[1])
-                    if self._is_valid_square(move3) and not self.board.get_piece(move3):
+                    if self._is_valid_square(move3) and not new_board.get_piece(move3):
                         legal_moves[pawn].add(move3)
                 else:
                     if m1_is_valid:
@@ -350,13 +362,13 @@ class MoveGenerator():
                     legal_moves[pawn] = set()
                     if m1_is_valid and self._is_piece_black(piece_1):
                         legal_moves[pawn].add(move1)
-                    if m2_is_valid and self._is_piece_white(piece_2):
+                    if m2_is_valid and self._is_piece_black(piece_2):
                         legal_moves[pawn].add(move2)
 
-                    if pawn[0] == 1 and not self.board.get_piece((2, pawn[1])) and not self.board.get_piece((3, pawn[1])):
+                    if pawn[0] == 1 and not new_board.get_piece((2, pawn[1])) and not new_board.get_piece((3, pawn[1])):
                         legal_moves[pawn].add((3, pawn[1]))
                     move3 = (pawn[0] + 1, pawn[1])
-                    if self._is_valid_square(move3) and not self.board.get_piece(move3):
+                    if self._is_valid_square(move3) and not new_board.get_piece(move3):
                         legal_moves[pawn].add(move3)
                 else:
                     if m1_is_valid:
@@ -573,13 +585,14 @@ class MoveGenerator():
             - side: -1 for both, 0 for queenside, 1 for kingside
         """
         if color == "white":
-            c_rights = self.white_castling_rights
+            if side == -1:
+                self.white_castling_rights = [False, False]
+            else:
+                self.white_castling_rights[side] = False
         else:
-            c_rights = self.black_castling_rights
-
-        if side == -1:
-            c_rights = [False, False]
-        else:
-            c_rights[side] = False
+            if side == -1:
+                self.black_castling_rights = [False, False]
+            else:
+                self.black_castling_rights[side] = False
 
 
