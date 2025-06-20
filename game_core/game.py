@@ -41,16 +41,16 @@ class ChessGame():
         else:
             self.current_player = "white"
         
-        # legal_moves, checkmate, draw = self.move_gen.get_legal_moves(self.current_player)
-        # if checkmate:
-        #     self.game_over = True
-        #     self.winner = "white" if self.current_player == "black" else "black"
-        # elif draw:
-        #     self.game_over = True
-        #     self.winner = "draw"
+        legal_moves, checkmate, draw = self.move_gen.get_legal_moves(self.current_player)
+        if checkmate:
+            self.game_over = True
+            self.winner = "white" if self.current_player == "black" else "black"
+        elif draw:
+            self.game_over = True
+            self.winner = "draw"
         
-        # print(f"Checkmate = {checkmate}, Draw = {draw}, legal_moves = {legal_moves}")
-        # 
+        print(f"Checkmate = {checkmate}, Draw = {draw}, legal_moves = {legal_moves}")
+        
 
     def get_legal_moves(self):
         """
