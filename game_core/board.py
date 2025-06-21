@@ -39,7 +39,6 @@ class Board():
 
         self.prev_white_moves = []
         self.prev_black_moves = []
-
         
     def _setup_starting_position(self):
         """
@@ -59,7 +58,7 @@ class Board():
         row, col = coord
         return self.board[row][col]
     
-    def move(self, from_pos, to_pos, in_place=True):
+    def move(self, from_pos, to_pos, in_place=True, promote_piece=None):
         """
         Move piece from from_pos to to_pos
         """
@@ -77,13 +76,20 @@ class Board():
                       abs(to_pos[1] - from_pos[1]) == 2 and 
                       to_pos[0] == from_pos[0])
             
-            is_en_passent = ((curr_piece == Piece.WHITE_PAWN and from_pos[0] == 4 and to_pos[0] == 5 and not self.get_piece(to_pos) and self.get_piece((4, to_pos[1]))) or
-                             (curr_piece == Piece.BLACK_PAWN and from_pos[0] == 3 and to_pos[0] == 2 and not self.get_piece(to_pos) and self.get_piece((3, to_pos[1]))))
+            is_en_passent = ((curr_piece == Piece.WHITE_PAWN and from_pos[0] == 4 and to_pos[0] == 5 and not 
+                              self.get_piece(to_pos) and self.get_piece((4, to_pos[1]))) or
+                             (curr_piece == Piece.BLACK_PAWN and from_pos[0] == 3 and to_pos[0] == 2 and not 
+                              self.get_piece(to_pos) and self.get_piece((3, to_pos[1]))))
+
+            is_promotion = ((curr_piece == Piece.WHITE_PAWN and to_pos[0] == 7) or 
+                       (curr_piece == Piece.BLACK_PAWN and to_pos[0] == 0))
             
             if is_castling:
                 self._handle_castling_move(from_pos, to_pos, curr_piece)
             elif is_en_passent:
                 self._handle_en_passent(from_pos, to_pos, curr_piece)
+            elif is_promotion:
+                self._handle_promotion(from_pos, to_pos, curr_piece, promote_piece)
             else:
                 to_piece = self.get_piece(to_pos)
                 if to_piece:
@@ -114,13 +120,20 @@ class Board():
                       abs(to_pos[1] - from_pos[1]) == 2 and 
                       to_pos[0] == from_pos[0])
             
-            is_en_passent = ((curr_piece == Piece.WHITE_PAWN and from_pos[0] == 4 and to_pos[0] == 5 and not new_board.get_piece(to_pos) and new_board.get_piece((4, to_pos[1]))) or
-                             (curr_piece == Piece.BLACK_PAWN and from_pos[0] == 3 and to_pos[0] == 2 and not new_board.get_piece(to_pos) and new_board.get_piece((3, to_pos[1]))))
+            is_en_passent = ((curr_piece == Piece.WHITE_PAWN and from_pos[0] == 4 and to_pos[0] == 5 and not 
+                              new_board.get_piece(to_pos) and new_board.get_piece((4, to_pos[1]))) or
+                             (curr_piece == Piece.BLACK_PAWN and from_pos[0] == 3 and to_pos[0] == 2 and not 
+                              new_board.get_piece(to_pos) and new_board.get_piece((3, to_pos[1]))))
+            
+            is_promotion = ((curr_piece == Piece.WHITE_PAWN and to_pos[0] == 7) or 
+                       (curr_piece == Piece.BLACK_PAWN and to_pos[0] == 0))
             
             if is_castling:
                 new_board._handle_castling_move(from_pos, to_pos, curr_piece)
             elif is_en_passent:
                 new_board._handle_en_passent(from_pos, to_pos, curr_piece)
+            elif is_promotion:
+                new_board._handle_promotion(from_pos, to_pos, curr_piece, promote_piece)
             else:
                 to_piece = new_board.get_piece(to_pos)
                 if to_piece:
@@ -191,6 +204,30 @@ class Board():
         self.piece_positions[pawn_piece].add(pawn_to)
         self._set_piece(pawn_from, Piece.EMPTY)
         self._set_piece(pawn_to, pawn_piece)
+
+    def _handle_promotion(self, pawn_from, pawn_to, pawn_piece, promote_piece):
+        """
+        Handles promotions.
+        """    
+        if self._is_piece_white(pawn_piece):
+            if promote_piece not in [Piece.WHITE_QUEEN, Piece.WHITE_ROOK, Piece.WHITE_BISHOP, Piece.WHITE_KNIGHT]:
+                raise ValueError("Invalid promotion piece for white pawn")
+        else:
+            if promote_piece not in [Piece.BLACK_QUEEN, Piece.BLACK_ROOK, Piece.BLACK_BISHOP, Piece.BLACK_KNIGHT]:
+                raise ValueError("Invalid promotion piece for black pawn")
+        
+        to_piece = self.get_piece(pawn_to)
+        if to_piece:
+            self.piece_positions[to_piece].remove(pawn_to)
+        
+        self.piece_positions[pawn_piece].remove(pawn_from)
+        
+        if promote_piece not in self.piece_positions:
+            self.piece_positions[promote_piece] = set()
+        self.piece_positions[promote_piece].add(pawn_to)
+        
+        self._set_piece(pawn_from, Piece.EMPTY)
+        self._set_piece(pawn_to, promote_piece)
     
     def display(self):
         """
