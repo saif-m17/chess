@@ -191,7 +191,6 @@ class Board():
         self.piece_positions[pawn_piece].add(pawn_to)
         self._set_piece(pawn_from, Piece.EMPTY)
         self._set_piece(pawn_to, pawn_piece)
-        
     
     def display(self):
         """

@@ -16,7 +16,6 @@ class MoveGenerator():
         piece can move to. Returns a boolean of whether player is in checkmate. 
         Params:
             - color: "white" or "black"
-            - new_board: 
         """
         legal_moves = {}
         legal_moves.update(self._get_pawn_attacked_squares(color, self.board, True))
@@ -551,6 +550,8 @@ class MoveGenerator():
                             legal_moves[piece].add(new_square)
                         elif new_board.get_piece(new_square) and self._get_color(new_board.get_piece(new_square)) != color:
                             legal_moves[piece].add(new_square)
+                            direction_flags[j] = False
+                        else:
                             direction_flags[j] = False
                     else:
                         attacked_squares.append(new_square)
