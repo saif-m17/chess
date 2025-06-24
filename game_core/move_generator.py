@@ -1,4 +1,4 @@
-from board import Piece
+from .board import Piece
 
 class MoveGenerator():
     def __init__(self, board):

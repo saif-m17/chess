@@ -1,6 +1,6 @@
 import numpy as np
-from board import Piece, Board
-from move_generator import MoveGenerator
+from .board import Piece, Board
+from .move_generator import MoveGenerator
 
 class ChessGame():
     def __init__(self):

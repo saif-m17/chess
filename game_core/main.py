@@ -1,6 +1,6 @@
 import pygame
-from game import ChessGame
-from board import Piece
+from .game import ChessGame
+from .board import Piece
 
 # Constants
 WIDTH, HEIGHT = 784, 784
