@@ -28,7 +28,7 @@ def load_piece_images():
         pieces[key] = pygame.transform.scale(image, (TILE_SIZE, TILE_SIZE))
     return pieces
 
-def draw_board(screen, game, piece_images, skip_pos=None, promotion_pawn_pos=None, promotion_pawn_piece=None):
+def draw_board(screen, game, piece_images, skip_pos=None):
     screen.blit(pygame.image.load("assets/boards-png/rect-8x8.png"), (0, 0))
     for row in range(8):
         for col in range(8):
@@ -39,14 +39,10 @@ def draw_board(screen, game, piece_images, skip_pos=None, promotion_pawn_pos=Non
                 img = piece_images.get(piece)
                 if img:
                     screen.blit(img, (col * TILE_SIZE, row * TILE_SIZE))
-    if promotion_pawn_pos and promotion_pawn_piece:
-        img = piece_images.get(promotion_pawn_piece)
-        if img:
-            screen.blit(img, (promotion_pawn_pos[1] * TILE_SIZE, promotion_pawn_pos[0] * TILE_SIZE))
 
 def draw_game_over(screen, winner):
     font = pygame.font.SysFont("Arial", 48, bold=True)
-    text = f"{winner.capitalize()} wins!" if winner else "Draw!"
+    text = f"{winner.capitalize()} wins!" if winner != "draw" else "Draw!"
     rendered = font.render(text, True, (255, 0, 0))
     rect = rendered.get_rect(center=(WIDTH // 2, HEIGHT // 2))
     screen.blit(rendered, rect)
@@ -108,21 +104,19 @@ def main():
     promotion_data = None 
 
     while True:
-        promotion_pawn_pos = promotion_data[1] if promotion_mode and promotion_data else None
-        promotion_pawn_piece = game.board.get_piece(promotion_data[0]) if promotion_mode and promotion_data else None
-
+        # Draw the board normally, skip the piece being dragged
         draw_board(screen, game, piece_images,
-                   skip_pos=start_pos if dragging and not promotion_mode else None,
-                   promotion_pawn_pos=promotion_pawn_pos,
-                   promotion_pawn_piece=promotion_pawn_piece)
+                   skip_pos=start_pos if dragging and not promotion_mode else None)
 
         if game.is_game_over():
             draw_game_over(screen, game.winner)
 
+        # Draw the piece being dragged
         if dragging and drag_piece and not promotion_mode:
             x, y = pygame.mouse.get_pos()
             screen.blit(drag_piece, (x - TILE_SIZE // 2, y - TILE_SIZE // 2))
 
+        # Draw promotion dialog if in promotion mode
         if promotion_mode and promotion_data:
             pieces, rects = draw_promotion_dialog(screen, promotion_data[2], piece_images)
 
@@ -140,7 +134,12 @@ def main():
                     selected_piece = handle_promotion_click(event.pos, rects, pieces)
                     if selected_piece:
                         try:
-                            game.board.move(promotion_data[0], promotion_data[1], in_place=True, promote_piece=selected_piece)
+                            # Use game.make_move instead of board.move to ensure turn switching
+                            if selected_piece:
+                                print(f"Selected piece: {selected_piece}, type: {type(selected_piece)}")
+                                print(f"Promotion data: {promotion_data}")
+                                print(f"Expected piece types: {pieces}")
+                            game.make_move(promotion_data[0], promotion_data[1], promote_piece=selected_piece)
                         except Exception as e:
                             print("Promotion move failed:", e)
                         promotion_mode = False
@@ -149,6 +148,7 @@ def main():
                         drag_piece = None
                         start_pos = None
                     else:
+                        # Cancel promotion if clicked outside dialog
                         promotion_mode = False
                         promotion_data = None
                         dragging = False
@@ -174,8 +174,7 @@ def main():
                     player_color = "white" if piece == Piece.WHITE_PAWN else "black"
                     promotion_mode = True
                     promotion_data = (start_pos, end_pos, player_color)
-                    dragging = False
-                    drag_piece = None
+                    # Don't reset dragging state here - wait for promotion selection
                 else:
                     try:
                         game.make_move(start_pos, end_pos)

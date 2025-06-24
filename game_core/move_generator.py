@@ -13,7 +13,8 @@ class MoveGenerator():
         """
         Returns a dictionary of legal moves where key is the position of the
         starting square, and the values are a list of all possible places that
-        piece can move to. Returns a boolean of whether player is in checkmate. 
+        piece can move to. Returns a boolean of whether player is in checkmate
+        and whether the game has ended in a stalemate. 
         Params:
             - color: "white" or "black"
         """
@@ -40,7 +41,7 @@ class MoveGenerator():
         draw = not self.is_in_check(self.board, color) and no_legal_moves
         return legal_moves_final, checkmate, draw
 
-    def is_legal_move(self, from_pos, to_pos, color):
+    def is_legal_move(self, from_pos, to_pos, color, promote_piece=None):
         """
         Determines whether a move is legal.
         Params:
@@ -49,7 +50,7 @@ class MoveGenerator():
             - color: "white" or "black"
         """
         legal_ignoring_checks = self._is_legal_move_ignoring_checks(from_pos, to_pos, color)
-        updated_board = self.board.move(from_pos, to_pos, in_place=False)
+        updated_board = self.board.move(from_pos, to_pos, in_place=False, promote_piece=promote_piece)
         in_check_after_move = self.is_in_check(updated_board, color)
         return legal_ignoring_checks and not in_check_after_move
 
@@ -86,6 +87,8 @@ class MoveGenerator():
                     return True
                 elif curr_row == 1 and to_row == 3 and not self.board.get_piece((2,curr_col)):
                     return True
+                else:
+                    return False
             elif to_col == curr_col + 1 or to_col == curr_col - 1:
                 if to_row != curr_row + 1:
                     return False
@@ -98,6 +101,8 @@ class MoveGenerator():
                     black_move_from, black_move_to = prev_black_move
                     if black_move_from[0] == 6 and black_move_to[0] == 4 and black_move_to[1] == to_col and self.board.get_piece((4, to_col)) == Piece.BLACK_PAWN:
                         return True
+                else:
+                    return False
             else:
                 return False
         
@@ -373,7 +378,7 @@ class MoveGenerator():
 
                     if pawn[0] == 6 and not new_board.get_piece((5, pawn[1])) and not new_board.get_piece((4, pawn[1])):
                         legal_moves[pawn].add((4, pawn[1]))
-                    move3 = (pawn[0] -1, pawn[1])
+                    move3 = (pawn[0] - 1, pawn[1])
                     if self._is_valid_square(move3) and not new_board.get_piece(move3):
                         legal_moves[pawn].add(move3)
                 else:

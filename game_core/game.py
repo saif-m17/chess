@@ -10,16 +10,16 @@ class ChessGame():
         self.game_over = False
         self.winner = None
     
-    def make_move(self, from_square, to_square):
+    def make_move(self, from_square, to_square, promote_piece=None):
         """
         Makes given move if it is legal, otherwise raises ValueError. 
         Switches current player after move is made.
         """
-        if not self.move_gen.is_legal_move(from_square, to_square, self.current_player):
+        if not self.move_gen.is_legal_move(from_square, to_square, self.current_player, promote_piece):
             raise ValueError("Illegal move given.")
         
         piece = self.board.get_piece(from_square)
-        self.board.move(from_square, to_square, in_place=True)
+        self.board.move(from_square, to_square, in_place=True, promote_piece=promote_piece)
         
         if piece == Piece.WHITE_KING:
             self.move_gen.update_castling_rights("white", -1)  # Both sides
@@ -81,13 +81,24 @@ class ChessGame():
 if __name__ == "__main__":
     game = ChessGame()
     legal_moves, checkmate, draw = game.move_gen.get_legal_moves("white")
+    game.display()
     print(legal_moves)
     print(checkmate)
-    game.make_move((1, 3), (2, 3))
+    game.make_move((1, 3), (3, 3))
     legal_moves, checkmate, draw = game.move_gen.get_legal_moves("black")
-    print(legal_moves)
-    print(checkmate)
-    print(draw)
+    game.display()
+
+    game.make_move((6, 2), (5, 2))
+    game.display()
+
+    game.make_move((3, 3), (4, 3))
+    game.display()
+
+    game.make_move((5, 2), (4, 2))
+    game.display()
+
+    game.make_move((4, 3), (5, 3))
+    game.display()
 
 
 
