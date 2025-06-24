@@ -76,10 +76,7 @@ class Board():
                       abs(to_pos[1] - from_pos[1]) == 2 and 
                       to_pos[0] == from_pos[0])
             
-            is_en_passent = ((curr_piece == Piece.WHITE_PAWN and from_pos[0] == 4 and to_pos[0] == 5 and not 
-                              self.get_piece(to_pos) and self.get_piece((4, to_pos[1]))) or
-                             (curr_piece == Piece.BLACK_PAWN and from_pos[0] == 3 and to_pos[0] == 2 and not 
-                              self.get_piece(to_pos) and self.get_piece((3, to_pos[1]))))
+            is_en_passent = self._is_en_passant_move(from_pos, to_pos, curr_piece)
 
             is_promotion = ((curr_piece == Piece.WHITE_PAWN and to_pos[0] == 7) or 
                        (curr_piece == Piece.BLACK_PAWN and to_pos[0] == 0))
@@ -120,10 +117,7 @@ class Board():
                       abs(to_pos[1] - from_pos[1]) == 2 and 
                       to_pos[0] == from_pos[0])
             
-            is_en_passent = ((curr_piece == Piece.WHITE_PAWN and from_pos[0] == 4 and to_pos[0] == 5 and not 
-                              new_board.get_piece(to_pos) and new_board.get_piece((4, to_pos[1]))) or
-                             (curr_piece == Piece.BLACK_PAWN and from_pos[0] == 3 and to_pos[0] == 2 and not 
-                              new_board.get_piece(to_pos) and new_board.get_piece((3, to_pos[1]))))
+            is_en_passent = new_board._is_en_passant_move(from_pos, to_pos, curr_piece)
             
             is_promotion = ((curr_piece == Piece.WHITE_PAWN and to_pos[0] == 7) or 
                        (curr_piece == Piece.BLACK_PAWN and to_pos[0] == 0))
@@ -186,6 +180,36 @@ class Board():
         self.piece_positions[rook_piece].add(rook_to)
         self._set_piece(rook_from, Piece.EMPTY)
         self._set_piece(rook_to, rook_piece)
+
+    def _is_en_passant_move(self, from_pos, to_pos, curr_piece):
+        """
+        Check if the move is a valid en passant capture
+        """
+        if curr_piece == Piece.WHITE_PAWN:
+            if (from_pos[0] == 4 and to_pos[0] == 5 and 
+                abs(to_pos[1] - from_pos[1]) == 1 and 
+                not self.get_piece(to_pos)):
+                
+                captured_pawn_pos = (4, to_pos[1])
+                if self.get_piece(captured_pawn_pos) == Piece.BLACK_PAWN:
+                    if self.prev_black_moves:
+                        last_move_from, last_move_to = self.prev_black_moves[-1]
+                        return (last_move_from == (6, to_pos[1]) and 
+                                last_move_to == captured_pawn_pos)
+                        
+        elif curr_piece == Piece.BLACK_PAWN:
+            if (from_pos[0] == 3 and to_pos[0] == 2 and 
+                abs(to_pos[1] - from_pos[1]) == 1 and 
+                not self.get_piece(to_pos)):
+                
+                captured_pawn_pos = (3, to_pos[1])
+                if self.get_piece(captured_pawn_pos) == Piece.WHITE_PAWN:
+                    if self.prev_white_moves:
+                        last_move_from, last_move_to = self.prev_white_moves[-1]
+                        return (last_move_from == (1, to_pos[1]) and 
+                                last_move_to == captured_pawn_pos)
+        
+        return False
 
     def _handle_en_passent(self, pawn_from, pawn_to, pawn_piece):
         """
