@@ -1,3 +1,9 @@
+# Development tools
+maturin>=1.0,<2.0
+pytest
+black
+
+# Python
 numpy>=1.21.0
 pygame>=2.1.0
 pytest>=7.0.0
