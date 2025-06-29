@@ -1,0 +1,15 @@
+# Ignore Rust build artifacts
+move_gen/target
+
+# Ignore Python cache
+__pycache__/
+/*.py[cod]
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore OS files
+.DS_Store
+
+# Python environment
+/chess_env
