@@ -1,8 +1,10 @@
 use crate::board::*; 
+use num_enum::TryFromPrimitive;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum PieceType {
-    Pawn,
+pub enum Piece {
+    Pawn = 0,
     Knight,
     Bishop,
     Rook,
@@ -12,8 +14,8 @@ pub enum PieceType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Color {
-    White,
-    Black,
+    White = 0,
+    Black = 1,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -22,22 +24,41 @@ pub enum MoveType {
     Castle { kingside: bool },
     EnPassant,
     DoublePawnPush,
-    Promotion { piece: PieceType },
+    Promotion { piece: Piece },
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, TryFromPrimitive)]
+#[repr(u8)]
+pub enum Square {
+    A1 = 0, B1, C1, D1, E1, F1, G1, H1,
+    A2,    B2, C2, D2, E2, F2, G2, H2,
+    A3,    B3, C3, D3, E3, F3, G3, H3,
+    A4,    B4, C4, D4, E4, F4, G4, H4,
+    A5,    B5, C5, D5, E5, F5, G5, H5,
+    A6,    B6, C6, D6, E6, F6, G6, H6,
+    A7,    B7, C7, D7, E7, F7, G7, H7,
+    A8,    B8, C8, D8, E8, F8, G8, H8,
+}
+
+impl Square {
+    pub fn to_bitboard(self) -> u64 {
+        1u64 << (self as u8)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Move {
-    pub from: u8,                    // 0-63 square index
-    pub to: u8,                      // 0-63 square index  
-    pub piece: PieceType,            // What piece is moving
+    pub from: Square,                    // 0-63 square index
+    pub to: Square,                      // 0-63 square index  
+    pub piece: Piece,            // What piece is moving
     pub color: Color,                // What color is moving
-    pub captured: Option<PieceType>, // What piece was captured (if any)
+    pub captured: Option<Piece>, // What piece was captured (if any)
     pub move_type: MoveType,         // Special move information
 }
 
 impl Move {
     /// Creates a normal move (most common case)
-    pub fn new_normal(from: u8, to: u8, piece: PieceType, color: Color, captured: Option<PieceType>) -> Self {
+    pub fn new_normal(from: Square, to: Square, piece: Piece, color: Color, captured: Option<Piece>) -> Self {
         Move {
             from,
             to,
@@ -51,16 +72,16 @@ impl Move {
     /// Creates a castling move
     pub fn new_castle(color: Color, kingside: bool) -> Self {
         let (from, to) = match (color.clone(), kingside) {
-            (Color::White, true) => (4, 6),   // e1 to g1
-            (Color::White, false) => (4, 2),  // e1 to c1
-            (Color::Black, true) => (60, 62), // e8 to g8
-            (Color::Black, false) => (60, 58), // e8 to c8
+            (Color::White, true) => (Square::E1, Square::G1),   // e1 to g1
+            (Color::White, false) => (Square::E1, Square::C1),  // e1 to c1
+            (Color::Black, true) => (Square::E8, Square::G8), // e8 to g8
+            (Color::Black, false) => (Square::E8, Square::C8), // e8 to c8
         };
         
         Move {
             from,
             to,
-            piece: PieceType::King,
+            piece: Piece::King,
             color,
             captured: None,
             move_type: MoveType::Castle { kingside },
@@ -68,11 +89,11 @@ impl Move {
     }
     
     /// Creates a pawn promotion move
-    pub fn new_promotion(from: u8, to: u8, color: Color, captured: Option<PieceType>, promote_to: PieceType) -> Self {
+    pub fn new_promotion(from: Square, to: Square, color: Color, captured: Option<Piece>, promote_to: Piece) -> Self {
         Move {
             from,
             to,
-            piece: PieceType::Pawn,
+            piece: Piece::Pawn,
             color,
             captured,
             move_type: MoveType::Promotion { piece: promote_to },
@@ -80,23 +101,23 @@ impl Move {
     }
     
     /// Creates an en passant capture
-    pub fn new_en_passant(from: u8, to: u8, color: Color) -> Self {
+    pub fn new_en_passant(from: Square, to: Square, color: Color) -> Self {
         Move {
             from,
             to,
-            piece: PieceType::Pawn,
+            piece: Piece::Pawn,
             color,
-            captured: Some(PieceType::Pawn), // Always captures a pawn
+            captured: Some(Piece::Pawn), // Always captures a pawn
             move_type: MoveType::EnPassant,
         }
     }
     
     /// Creates a double pawn push
-    pub fn new_double_pawn_push(from: u8, to: u8, color: Color) -> Self {
+    pub fn new_double_pawn_push(from: Square, to: Square, color: Color) -> Self {
         Move {
             from,
             to,
-            piece: PieceType::Pawn,
+            piece: Piece::Pawn,
             color,
             captured: None,
             move_type: MoveType::DoublePawnPush,

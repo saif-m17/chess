@@ -1,6 +1,6 @@
-mod board; 
-mod moves;
-mod bitboards;
+pub mod board; 
+pub mod moves;
+pub mod bitboards;
 
 
 

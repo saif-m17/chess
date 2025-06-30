@@ -8,4 +8,5 @@ name = "chess_core"
 crate-type = ["cdylib"]
 
 [dependencies]
+num_enum = "0.7"
 pyo3 = { version = "0.24.1", features = ["extension-module"] }
