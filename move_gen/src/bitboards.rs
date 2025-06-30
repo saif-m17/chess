@@ -30,6 +30,7 @@ pub trait BitboardExt {
     fn set_bit(self, index: u8) -> Self;
     fn get_bit(self, index: u8) -> bool;
     fn shift_north(self) -> Self;
+    fn shift_south(self) -> Self;
 }
 
 impl BitboardExt for Bitboard {
@@ -47,6 +48,10 @@ impl BitboardExt for Bitboard {
 
     fn shift_north(self) -> Self {
         self << 8
+    }
+
+    fn shift_south(self) -> Self {
+        self >> 8
     }
 }
 
