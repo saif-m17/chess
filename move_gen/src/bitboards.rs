@@ -31,6 +31,8 @@ pub trait BitboardExt {
     fn get_bit(self, index: u8) -> bool;
     fn shift_north(self) -> Self;
     fn shift_south(self) -> Self;
+    fn shift_east(self) -> Self;
+    fn shift_west(self) -> Self;
 }
 
 impl BitboardExt for Bitboard {
@@ -52,6 +54,14 @@ impl BitboardExt for Bitboard {
 
     fn shift_south(self) -> Self {
         self >> 8
+    }
+
+    fn shift_west(self) -> Self {
+        self >> 1 & !FILE_H
+    }
+
+    fn shift_east(self) -> Self {
+        self << 1 & !FILE_A
     }
 }
 
