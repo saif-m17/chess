@@ -15,10 +15,11 @@ impl AttackTables {
         let mut king_attacks = [0u64; 64];
 
         for square in 0..64 {
-            let bb = 1u64 << square;
+            let bb: Bitboard = 1u64 << square;
             pawn_attacks[0][square] = PAWN_ATTACK_LEFT[0](bb) | PAWN_ATTACK_RIGHT[0](bb);
             pawn_attacks[1][square] = PAWN_ATTACK_LEFT[1](bb) | PAWN_ATTACK_RIGHT[1](bb);
-            knight_attacks[square] = 
+            knight_attacks[square] = gen_knight_attacks(bb);
+            king_attacks[square] = gen_king_attacks(bb); 
         } 
 
         AttackTables { 

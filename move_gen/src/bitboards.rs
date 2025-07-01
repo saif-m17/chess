@@ -94,7 +94,7 @@ pub const PAWN_ATTACK_RIGHT: [fn(Bitboard) -> Bitboard; 2] = [
 ];
 
 // Knight attacks
-pub fn knight_attacks(bb: Bitboard) -> Bitboard {
+pub fn gen_knight_attacks(bb: Bitboard) -> Bitboard {
     let move1 = (bb & !RANK_8 & !FILE_G & !FILE_H) << 10;
     let move2 = (bb & !RANK_1 & !FILE_G & !FILE_H) >> 6;
     let move3 = (bb & !RANK_1 & !RANK_2 & !FILE_H) >> 15;
@@ -105,4 +105,18 @@ pub fn knight_attacks(bb: Bitboard) -> Bitboard {
     let move8 = (bb & !RANK_7 & !RANK_8 & !FILE_A) << 15;
 
     move1 | move2 | move3 | move4 | move5 | move6 | move7 | move8
+}
+
+// King attacks
+pub fn gen_king_attacks(bb: Bitboard) -> Bitboard {
+    let move1 = (bb & !RANK_8) << 8;
+    let move2 = (bb & !RANK_8 & !FILE_H) << 7; 
+    let move3 = (bb & !RANK_8 & !FILE_A) << 9;
+    let move4 = (bb & !RANK_1) >> 8;
+    let move5 = (bb & !RANK_1 & !FILE_H) >> 9; 
+    let move6 = (bb & !RANK_1 & !FILE_A) >> 7; 
+    let move7 = (bb & !FILE_H) << 1; 
+    let move8 = (bb & !FILE_A) >> 1; 
+
+    move1 | move2 | move3 | move4 | move5 | move6 | move7 | move8 
 }
