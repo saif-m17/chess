@@ -1,6 +1,6 @@
 use num_enum::TryFromPrimitive;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Piece {
     Pawn = 0,
     Knight,
@@ -8,12 +8,20 @@ pub enum Piece {
     Rook,
     Queen,
     King,
+    Empty,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Color {
     White = 0,
     Black = 1,
+}
+
+impl Color {
+    pub fn opposite_color(&self) -> Color {
+        [Color::Black, Color::White][*self as usize]
+    }
+    
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -26,7 +34,7 @@ pub enum MoveType {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, TryFromPrimitive)]
-#[repr(u8)]
+#[repr(u64)]
 pub enum Square {
     A1 = 0, B1, C1, D1, E1, F1, G1, H1,
     A2,    B2, C2, D2, E2, F2, G2, H2,
@@ -40,7 +48,7 @@ pub enum Square {
 
 impl Square {
     pub fn to_bitboard(self) -> u64 {
-        1u64 << (self as u8)
+        1u64 << (self as u64)
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::attacktables::AttackTables;
 use crate::bitboards::{*};
 use crate::moves::{Color, Color::*, Piece::*, Move, Square, Square::*};
 use crate::board::Board; 
@@ -10,29 +11,40 @@ pub fn get_white_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     let empty: Bitboard = !all_squares; 
 
     // Pushing pawns one square forward, deal with promotion later
+    // TODO: change so it deals with both colors without branching 
     let one_step = pawn_bb.shift_north() & empty & !RANK_7; 
 
     // Pushing pawns two squares forward
     let two_step = one_step.shift_north() & empty & RANK_3;
 
     // Extracting moves from one_step
-    let pawn_push_moves = extract_pawn_push_moves(one_step); 
+    let pawn_push_moves = extract_pawn_push_moves(one_step, 8, color); 
     moves.extend(pawn_push_moves); 
 
+    // Extracting moves from two_step
+    let push_double_push_moves = extract_pawn_push_moves(two_step, 16, color);
+    moves.extend(push_double_push_moves);
+
+    // Pawn attacks 
+    let pawn_attacks_bbs = AttackTables::get().pawn_attacks[color as usize];
+    let enemies = board.get_pieces(color.opposite_color());
+    let allies = board.get_pieces(color); 
+    let enemies_not_allies = enemies & !allies; 
+    let pawn_attack_moves = extract_pawn_attack_moves(board, pawn_bb, &pawn_attacks_bbs, enemies_not_allies, color); 
+    moves.extend(pawn_attack_moves); 
 
     moves
 }
 
-pub fn extract_pawn_push_moves(mut bb: Bitboard) -> Vec<Move> {
+fn extract_pawn_push_moves(mut bb: Bitboard, offset: u64, color:Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
-    let from_bb = bb.shift_south(); 
 
     let mut to_bb = bb;
 
     while to_bb != 0 {
-        let to_index = to_bb.trailing_zeros() as u8;
+        let to_index = to_bb.trailing_zeros() as u64;
         to_bb = to_bb.clear_bit(to_index);
-        let from_index = to_index - 8; 
+        let from_index = to_index - offset; 
 
         // Converting to piece enum
         let to = Square::try_from(to_index).unwrap();
@@ -42,9 +54,40 @@ pub fn extract_pawn_push_moves(mut bb: Bitboard) -> Vec<Move> {
             from,
             to,
             Pawn,
-            White,
+            color,
             None,
         ))
     }
+    moves
+}
+
+/// Extracts the pawn attack moves from 
+fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboard; 64], enemies_not_allies: Bitboard, color: Color) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+    let mut from_bb = pawnbb; 
+
+    while from_bb != 0 {
+        let from_index = from_bb.trailing_zeros() as u64;
+        from_bb = from_bb.clear_bit(from_index);
+
+        let from = Square::try_from(from_index).unwrap(); 
+
+        let mut to_bb = attacks[from_index as usize] & enemies_not_allies;
+        while to_bb != 0 {
+            let to_index = to_bb.trailing_zeros() as u64;
+            to_bb = to_bb.clear_bit(to_index);
+            let to = Square::try_from(to_index).unwrap();
+
+            let captured_piece = board.get_piece_at(to_index); 
+            moves.push(Move::new_normal(
+                from,
+                to,
+                Pawn,
+                color,
+                captured_piece,
+            ))
+        } 
+    }
+
     moves
 }

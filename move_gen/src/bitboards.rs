@@ -26,9 +26,9 @@ pub const FULL: u64 = 0b11111111_11111111_11111111_11111111_11111111_11111111_11
 pub type Bitboard = u64; 
 
 pub trait BitboardExt {
-    fn clear_bit(self, index: u8) -> Self;
-    fn set_bit(self, index: u8) -> Self;
-    fn get_bit(self, index: u8) -> bool;
+    fn clear_bit(self, index: u64) -> Self;
+    fn set_bit(self, index: u64) -> Self;
+    fn get_bit(self, index: u64) -> bool;
     fn shift_north(self) -> Self;
     fn shift_south(self) -> Self;
     fn shift_east(self) -> Self;
@@ -36,15 +36,15 @@ pub trait BitboardExt {
 }
 
 impl BitboardExt for Bitboard {
-    fn clear_bit(self, index: u8) -> Self {
+    fn clear_bit(self, index: u64) -> Self {
         self & !(1u64 << index)
     }
 
-    fn set_bit(self, index: u8) -> Self {
+    fn set_bit(self, index: u64) -> Self {
         self | (1u64 << index)
     }
 
-    fn get_bit(self, index: u8) -> bool {
+    fn get_bit(self, index: u64) -> bool {
         (self << index) & 1 == 1
     }
 
@@ -76,11 +76,11 @@ pub const FORWARD_SHIFT: [fn(Bitboard) -> Bitboard; 2] = [shift_north, shift_sou
 pub const PAWN_DOUBLE_RANK: [Bitboard; 2] = [RANK_2, RANK_7];
 pub const PAWN_PROMOTION_RANK: [Bitboard; 2] = [RANK_8, RANK_1];
 
-// Pawn Attacks
-pub const fn pawn_attack_left_white(bb: Bitboard) -> Bitboard { (bb << 7) & !FILE_H }
-pub const fn pawn_attack_right_white(bb: Bitboard) -> Bitboard { (bb << 9) & !FILE_A }
-pub const fn pawn_attack_left_black(bb: Bitboard) -> Bitboard { (bb >> 9) & !FILE_H }
-pub const fn pawn_attack_right_black(bb: Bitboard) -> Bitboard { (bb >> 7) & !FILE_A }
+// Pawn Attacks - Fix check file first then shift 
+pub const fn pawn_attack_left_white(bb: Bitboard) -> Bitboard { (bb & !FILE_H) << 7 }
+pub const fn pawn_attack_right_white(bb: Bitboard) -> Bitboard { (bb& !FILE_A) << 9 }
+pub const fn pawn_attack_left_black(bb: Bitboard) -> Bitboard { (bb & !FILE_H) >> 9 }
+pub const fn pawn_attack_right_black(bb: Bitboard) -> Bitboard { (bb & !FILE_A) >> 7}
 
 pub const PAWN_ATTACK_LEFT: [fn(Bitboard) -> Bitboard; 2] = [
     pawn_attack_left_white,

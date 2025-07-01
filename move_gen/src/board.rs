@@ -1,8 +1,9 @@
 use crate::bitboards::{*}; 
-use crate::moves::{Color, Color::*, Piece::*, Square::*};
+use crate::moves::{Color, Color::*, Piece, Piece::*, Square::*};
 
 pub struct Board {
     pub pieces: [[Bitboard; 6]; 2],
+    pub piece_lookup: [Piece; 64],
 }
 
 impl Board {
@@ -26,7 +27,18 @@ impl Board {
         pieces[Black as usize][King as usize] = E1.to_bitboard();
         pieces[Black as usize][Queen as usize] = D1.to_bitboard();
 
-        Board { pieces }
+        let piece_lookup = [
+            Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook,  
+            Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn,          
+            Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,   
+            Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,  
+            Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,   
+            Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,   
+            Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn,         
+            Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook,  
+        ];
+
+        Board { pieces, piece_lookup }
     }
 
     /// Gets pieces for color 
@@ -37,5 +49,13 @@ impl Board {
     /// Returns position of all pieces
     pub fn get_all_pieces(&self) -> u64 {
         self.get_pieces(Black) | self.get_pieces(White)
+    }
+
+    // Try to make this branchless at some point 
+    pub fn get_piece_at(&self, index: u64) -> Option<Piece> {
+        match self.piece_lookup[index as usize] {
+            Piece::Empty => None,
+            piece => Some(piece),
+        }
     }
 }
