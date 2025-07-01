@@ -1,6 +1,4 @@
-use crate::board::*; 
 use num_enum::TryFromPrimitive;
-use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Piece {

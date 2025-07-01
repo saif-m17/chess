@@ -74,6 +74,7 @@ name = "move_gen"
 version = "0.1.0"
 dependencies = [
  "num_enum",
+ "once_cell",
  "pyo3",
 ]
 

@@ -49,20 +49,60 @@ impl BitboardExt for Bitboard {
     }
 
     fn shift_north(self) -> Self {
-        self << 8
+        (self & !RANK_8) << 8 
     }
 
     fn shift_south(self) -> Self {
-        self >> 8
+        (self & !RANK_1) >> 8 
     }
 
     fn shift_west(self) -> Self {
-        self >> 1 & !FILE_H
+        (self & !FILE_H) >> 1
     }
 
     fn shift_east(self) -> Self {
-        self << 1 & !FILE_A
+        (self & !FILE_A) << 1 
     }
 }
 
 
+// Free functions for shifting pawns
+pub fn shift_north(bb: Bitboard) -> Bitboard { (bb & !RANK_8) << 8 }
+pub fn shift_south(bb: Bitboard) -> Bitboard { (bb & !RANK_1) >> 8 }
+pub fn shift_east(bb: Bitboard) -> Bitboard { (bb & !FILE_A) << 1 }
+pub fn shift_west(bb: Bitboard) -> Bitboard { (bb & !FILE_H) >> 1 }
+
+// Color-relative movement
+pub const FORWARD_SHIFT: [fn(Bitboard) -> Bitboard; 2] = [shift_north, shift_south];
+pub const PAWN_DOUBLE_RANK: [Bitboard; 2] = [RANK_2, RANK_7];
+pub const PAWN_PROMOTION_RANK: [Bitboard; 2] = [RANK_8, RANK_1];
+
+// Pawn Attacks
+pub fn pawn_attack_left_white(bb: Bitboard) -> Bitboard { (bb << 7) & !FILE_H }
+pub fn pawn_attack_right_white(bb: Bitboard) -> Bitboard { (bb << 9) & !FILE_A }
+pub fn pawn_attack_left_black(bb: Bitboard) -> Bitboard { (bb >> 9) & !FILE_H }
+pub fn pawn_attack_right_black(bb: Bitboard) -> Bitboard { (bb >> 7) & !FILE_A }
+
+pub const PAWN_ATTACK_LEFT: [fn(Bitboard) -> Bitboard; 2] = [
+    pawn_attack_left_white,
+    pawn_attack_left_black,
+];
+
+pub const PAWN_ATTACK_RIGHT: [fn(Bitboard) -> Bitboard; 2] = [
+    pawn_attack_right_white,
+    pawn_attack_right_black,
+];
+
+// Knight attacks
+pub fn knight_attacks(bb: Bitboard) -> Bitboard {
+    let move1 = (bb & !RANK_8 & !FILE_G & !FILE_H) << 10;
+    let move2 = (bb & !RANK_1 & !FILE_G & !FILE_H) >> 6;
+    let move3 = (bb & !RANK_1 & !RANK_2 & !FILE_H) >> 15;
+    let move4 = (bb & !RANK_7 & !RANK_8 & !FILE_H) << 17;
+    let move5 = (bb & !RANK_8 & !FILE_A & !FILE_B) << 6;
+    let move6 = (bb & !RANK_1 & !FILE_A & !FILE_B) >> 10;
+    let move7 = (bb & !RANK_1 & !RANK_2 & !FILE_A) >> 17;
+    let move8 = (bb & !RANK_7 & !RANK_8 & !FILE_A) << 15;
+
+    move1 | move2 | move3 | move4 | move5 | move6 | move7 | move8
+}

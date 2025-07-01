@@ -1,5 +1,5 @@
 use crate::bitboards::{*}; 
-use crate::moves::{Color, Color::*, Piece::*, Move, Square, Square::*};
+use crate::moves::{Color, Color::*, Piece::*, Square::*};
 
 pub struct Board {
     pub pieces: [[Bitboard; 6]; 2],
