@@ -65,7 +65,6 @@ impl BitboardExt for Bitboard {
     }
 }
 
-
 // Free functions for shifting pawns
 pub fn shift_north(bb: Bitboard) -> Bitboard { (bb & !RANK_8) << 8 }
 pub fn shift_south(bb: Bitboard) -> Bitboard { (bb & !RANK_1) >> 8 }
@@ -78,10 +77,10 @@ pub const PAWN_DOUBLE_RANK: [Bitboard; 2] = [RANK_2, RANK_7];
 pub const PAWN_PROMOTION_RANK: [Bitboard; 2] = [RANK_8, RANK_1];
 
 // Pawn Attacks
-pub fn pawn_attack_left_white(bb: Bitboard) -> Bitboard { (bb << 7) & !FILE_H }
-pub fn pawn_attack_right_white(bb: Bitboard) -> Bitboard { (bb << 9) & !FILE_A }
-pub fn pawn_attack_left_black(bb: Bitboard) -> Bitboard { (bb >> 9) & !FILE_H }
-pub fn pawn_attack_right_black(bb: Bitboard) -> Bitboard { (bb >> 7) & !FILE_A }
+pub const fn pawn_attack_left_white(bb: Bitboard) -> Bitboard { (bb << 7) & !FILE_H }
+pub const fn pawn_attack_right_white(bb: Bitboard) -> Bitboard { (bb << 9) & !FILE_A }
+pub const fn pawn_attack_left_black(bb: Bitboard) -> Bitboard { (bb >> 9) & !FILE_H }
+pub const fn pawn_attack_right_black(bb: Bitboard) -> Bitboard { (bb >> 7) & !FILE_A }
 
 pub const PAWN_ATTACK_LEFT: [fn(Bitboard) -> Bitboard; 2] = [
     pawn_attack_left_white,
@@ -94,7 +93,7 @@ pub const PAWN_ATTACK_RIGHT: [fn(Bitboard) -> Bitboard; 2] = [
 ];
 
 // Knight attacks
-pub fn gen_knight_attacks(bb: Bitboard) -> Bitboard {
+pub const fn gen_knight_attacks(bb: Bitboard) -> Bitboard {
     let move1 = (bb & !RANK_8 & !FILE_G & !FILE_H) << 10;
     let move2 = (bb & !RANK_1 & !FILE_G & !FILE_H) >> 6;
     let move3 = (bb & !RANK_1 & !RANK_2 & !FILE_H) >> 15;
@@ -108,7 +107,7 @@ pub fn gen_knight_attacks(bb: Bitboard) -> Bitboard {
 }
 
 // King attacks
-pub fn gen_king_attacks(bb: Bitboard) -> Bitboard {
+pub const fn gen_king_attacks(bb: Bitboard) -> Bitboard {
     let move1 = (bb & !RANK_8) << 8;
     let move2 = (bb & !RANK_8 & !FILE_H) << 7; 
     let move3 = (bb & !RANK_8 & !FILE_A) << 9;
