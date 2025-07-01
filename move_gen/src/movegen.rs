@@ -11,11 +11,11 @@ pub fn get_white_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     let empty: Bitboard = !all_squares; 
 
     // Pushing pawns one square forward, deal with promotion later
-    // TODO: change so it deals with both colors without branching 
-    let one_step = pawn_bb.shift_north() & empty & !RANK_7; 
+    // TODO: change so it deals with both colors without branching - just use functions from bitboards.rs
+    let one_step = FORWARD_SHIFT[color as usize](pawn_bb) & empty; 
 
     // Pushing pawns two squares forward
-    let two_step = one_step.shift_north() & empty & RANK_3;
+    let two_step = FORWARD_SHIFT[color as usize](one_step) & empty & PAWN_DOUBLE_RANK[color as usize];
 
     // Extracting moves from one_step
     let pawn_push_moves = extract_pawn_push_moves(one_step, 8, color); 
@@ -24,6 +24,8 @@ pub fn get_white_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     // Extracting moves from two_step
     let push_double_push_moves = extract_pawn_push_moves(two_step, 16, color);
     moves.extend(push_double_push_moves);
+
+    // Pawn promotions (TODO)
 
     // Pawn attacks 
     let pawn_attacks_bbs = AttackTables::get().pawn_attacks[color as usize];
@@ -36,7 +38,7 @@ pub fn get_white_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     moves
 }
 
-fn extract_pawn_push_moves(mut bb: Bitboard, offset: u64, color:Color) -> Vec<Move> {
+fn extract_pawn_push_moves(bb: Bitboard, offset: u64, color:Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 
     let mut to_bb = bb;
@@ -62,7 +64,9 @@ fn extract_pawn_push_moves(mut bb: Bitboard, offset: u64, color:Color) -> Vec<Mo
 }
 
 /// Extracts the pawn attack moves from 
-fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboard; 64], enemies_not_allies: Bitboard, color: Color) -> Vec<Move> {
+fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboard; 64], 
+    enemies_not_allies: Bitboard, color: Color) -> Vec<Move> {
+
     let mut moves: Vec<Move> = Vec::new();
     let mut from_bb = pawnbb; 
 

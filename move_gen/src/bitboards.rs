@@ -73,7 +73,7 @@ pub fn shift_west(bb: Bitboard) -> Bitboard { (bb & !FILE_H) >> 1 }
 
 // Color-relative movement
 pub const FORWARD_SHIFT: [fn(Bitboard) -> Bitboard; 2] = [shift_north, shift_south];
-pub const PAWN_DOUBLE_RANK: [Bitboard; 2] = [RANK_2, RANK_7];
+pub const PAWN_DOUBLE_RANK: [Bitboard; 2] = [RANK_3, RANK_6]; // one more than it should be, since we'll use already pushed pawns
 pub const PAWN_PROMOTION_RANK: [Bitboard; 2] = [RANK_8, RANK_1];
 
 // Pawn Attacks - Fix check file first then shift 
