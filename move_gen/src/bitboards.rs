@@ -74,7 +74,7 @@ pub fn shift_west(bb: Bitboard) -> Bitboard { (bb & !FILE_H) >> 1 }
 // Color-relative movement
 pub const FORWARD_SHIFT: [fn(Bitboard) -> Bitboard; 2] = [shift_north, shift_south];
 pub const PAWN_DOUBLE_RANK: [Bitboard; 2] = [RANK_3, RANK_6]; // one more than it should be, since we'll use already pushed pawns
-pub const PAWN_PROMOTION_RANK: [Bitboard; 2] = [RANK_8, RANK_1];
+pub const PAWN_PROMOTION_RANK: [Bitboard; 2] = [RANK_7, RANK_2]; //one less than it should be, check before we make the move
 
 // Pawn Attacks - Fix check file first then shift 
 pub const fn pawn_attack_left_white(bb: Bitboard) -> Bitboard { (bb & !FILE_H) << 7 }
@@ -91,6 +91,17 @@ pub const PAWN_ATTACK_RIGHT: [fn(Bitboard) -> Bitboard; 2] = [
     pawn_attack_right_white,
     pawn_attack_right_black,
 ];
+
+// Pawn promotions
+pub fn pawn_promotion_white(bb: Bitboard) -> Bitboard {
+    (bb & RANK_7) << 8
+}
+
+pub fn pawn_promotion_black(bb: Bitboard) -> Bitboard {
+    (bb & RANK_2) >> 8
+}
+
+pub const PAWN_PROMOTION: [fn(Bitboard) -> Bitboard; 2] = [pawn_promotion_white, pawn_promotion_black]; 
 
 // Knight attacks
 pub const fn gen_knight_attacks(bb: Bitboard) -> Bitboard {
