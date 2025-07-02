@@ -1,9 +1,36 @@
 use crate::attacktables::AttackTables;
 use crate::bitboards::{*};
-use crate::moves::{Color, Color::*, Piece, Piece::*, Move, Square, Square::*};
+use crate::moves::{Color, Piece, Piece::*, Move, Square};
 use crate::board::Board; 
 
-/// Returns vector of white pawn moves - doesn't consider checks    
+/// Returns vector of king moves
+pub fn get_king_moves(board: &Board, color: Color) -> Vec<Move>{
+    let mut moves: Vec<Move> = Vec::new();
+    let king_bb: Bitboard = board.pieces[color as usize][King as usize];
+
+    let king_index = king_bb.trailing_zeros() as u64; 
+
+    let from = Square::try_from(king_index).unwrap();
+
+    let mut attacks = AttackTables::get().king_attacks[king_index as usize]; 
+
+    while attacks != 0 {
+        let to_index = attacks.trailing_zeros() as u64;
+        attacks = attacks.clear_bit(to_index);
+        let to = Square::try_from(to_index).unwrap();
+        let captured_piece = board.get_piece_at(to_index); 
+        moves.push(Move::new_normal(
+            from,
+            to,
+            King,
+            color,
+            captured_piece,
+        ))
+    }
+    moves
+}
+
+/// Returns vector of pawn moves - doesn't consider checks    
 pub fn get_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new(); 
     let pawn_bb: Bitboard = board.pieces[color as usize][Pawn as usize];
@@ -18,11 +45,11 @@ pub fn get_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     let two_step = FORWARD_SHIFT[color as usize](one_step) & empty & PAWN_DOUBLE_RANK[color as usize];
 
     // Extracting moves from one_step
-    let pawn_push_moves = extract_pawn_push_moves(one_step, 8, color); // fix offset to be constants in bitboards
+    let pawn_push_moves = extract_pawn_push_moves(one_step, OFFSET_SINGLE_PUSH[color as usize], color); // fix offset to be constants in bitboards
     moves.extend(pawn_push_moves); 
 
     // Extracting moves from two_step
-    let double_push_moves = extract_pawn_push_moves(two_step, 16, color);
+    let double_push_moves = extract_pawn_push_moves(two_step, OFFSET_DOUBLE_PUSH[color as usize], color);
     moves.extend(double_push_moves);
 
     // Pawn promotions not captures
@@ -51,7 +78,7 @@ pub fn get_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     moves
 }
 
-fn extract_pawn_push_moves(bb: Bitboard, offset: u64, color:Color) -> Vec<Move> {
+fn extract_pawn_push_moves(bb: Bitboard, offset: i8, color:Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 
     let mut to_bb = bb;
@@ -59,7 +86,7 @@ fn extract_pawn_push_moves(bb: Bitboard, offset: u64, color:Color) -> Vec<Move> 
     while to_bb != 0 {
         let to_index = to_bb.trailing_zeros() as u64;
         to_bb = to_bb.clear_bit(to_index);
-        let from_index = to_index - offset; 
+        let from_index = (to_index as i64 - offset as i64) as u64; 
 
         // Converting to piece enum
         let to = Square::try_from(to_index).unwrap();

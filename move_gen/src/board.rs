@@ -3,7 +3,7 @@ use crate::moves::{Color, Color::*, Piece, Piece::*, Square::*};
 
 pub struct Board {
     pub pieces: [[Bitboard; 6]; 2],
-    pub piece_lookup: [Piece; 64],
+    pub piece_lookup: [Option<Piece>; 64],
 }
 
 impl Board {
@@ -27,15 +27,15 @@ impl Board {
         pieces[Black as usize][King as usize] = E1.to_bitboard();
         pieces[Black as usize][Queen as usize] = D1.to_bitboard();
 
-        let piece_lookup = [
-            Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook,  
-            Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn,          
-            Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,   
-            Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,  
-            Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,   
-            Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,   
-            Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn, Pawn,         
-            Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook,  
+        let piece_lookup: [Option<Piece>; 64] = [
+            Some(Rook), Some(Knight), Some(Bishop), Some(Queen), Some(King), Some(Bishop), Some(Knight), Some(Rook),  
+            Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn),          
+            None, None, None, None, None, None, None, None,   
+            None, None, None, None, None, None, None, None,  
+            None, None, None, None, None, None, None, None,   
+            None, None, None, None, None, None, None, None,   
+            Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn), Some(Pawn),         
+            Some(Rook), Some(Knight), Some(Bishop), Some(Queen), Some(King), Some(Bishop), Some(Knight), Some(Rook),  
         ];
 
         Board { pieces, piece_lookup }
@@ -53,9 +53,6 @@ impl Board {
 
     // Try to make this branchless at some point 
     pub fn get_piece_at(&self, index: u64) -> Option<Piece> {
-        match self.piece_lookup[index as usize] {
-            Piece::Empty => None,
-            piece => Some(piece),
-        }
+        self.piece_lookup[index as usize]
     }
 }

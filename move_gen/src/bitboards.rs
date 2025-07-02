@@ -75,6 +75,8 @@ pub fn shift_west(bb: Bitboard) -> Bitboard { (bb & !FILE_H) >> 1 }
 pub const FORWARD_SHIFT: [fn(Bitboard) -> Bitboard; 2] = [shift_north, shift_south];
 pub const PAWN_DOUBLE_RANK: [Bitboard; 2] = [RANK_3, RANK_6]; // one more than it should be, since we'll use already pushed pawns
 pub const PAWN_PROMOTION_RANK: [Bitboard; 2] = [RANK_7, RANK_2]; //one less than it should be, check before we make the move
+pub const OFFSET_SINGLE_PUSH: [i8; 2] = [8, -8];
+pub const OFFSET_DOUBLE_PUSH: [i8; 2] = [16, -16]; 
 
 // Pawn Attacks - Fix check file first then shift 
 pub const fn pawn_attack_left_white(bb: Bitboard) -> Bitboard { (bb & !FILE_H) << 7 }
