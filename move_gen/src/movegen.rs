@@ -30,6 +30,34 @@ pub fn get_king_moves(board: &Board, color: Color) -> Vec<Move>{
     moves
 }
 
+/// Returns vector of knight moves
+pub fn get_knight_moves(board: &Board, color: Color) -> Vec<Move> {
+
+    let mut moves: Vec<Move> = Vec::new();
+    let mut knight_bb: Bitboard = board.pieces[color as usize][Knight as usize];
+
+    while knight_bb != 0 {
+        let knight = knight_bb.trailing_zeros() as u64;
+        let from = Square::try_from(knight).unwrap();
+        let mut attacks = AttackTables::get().knight_attacks[knight as usize]; 
+
+        while attacks != 0 {
+            let to_index = attacks.trailing_zeros() as u64;
+            attacks = attacks.clear_bit(to_index);
+            let to = Square::try_from(to_index).unwrap();
+            let captured_piece = board.get_piece_at(to_index); 
+            moves.push(Move::new_normal(
+                from,
+                to,
+                Knight,
+                color,
+                captured_piece,
+            ))
+        }
+    }
+    moves
+}
+
 /// Returns vector of pawn moves - doesn't consider checks    
 pub fn get_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new(); 
