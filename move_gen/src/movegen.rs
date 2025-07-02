@@ -36,9 +36,17 @@ pub fn get_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     let pawn_attacks_bbs = AttackTables::get().pawn_attacks[color as usize];
     let enemies = board.get_pieces(color.opposite_color());
     let allies = board.get_pieces(color); 
-    let enemies_not_allies = enemies & !allies; 
-    let pawn_attack_moves = extract_pawn_attack_moves(board, pawn_bb, &pawn_attacks_bbs, enemies_not_allies, color); 
-    moves.extend(pawn_attack_moves); 
+    let enemies_not_allies = enemies & !allies;
+    let exclude_promotions = pawn_bb & !PAWN_PROMOTION_RANK[color as usize]; 
+    let pawn_attack_moves = extract_pawn_attack_moves(board, exclude_promotions, &pawn_attacks_bbs, enemies_not_allies, color); 
+    moves.extend(pawn_attack_moves);
+
+    // Pawn promotions that result in captures
+    let promotion_elligible = pawn_bb & PAWN_DOUBLE_RANK[color as usize];
+    for promote_piece in promo_pieces {
+        moves.extend(extract_pawn_promotion_captures(board, promotion_elligible, &pawn_attacks_bbs, 
+            Some(promote_piece), enemies_not_allies, color)); 
+    } 
 
     moves
 }
@@ -74,7 +82,6 @@ fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboar
 
     let mut moves: Vec<Move> = Vec::new();
     let mut from_bb = pawnbb;
-    from_bb = from_bb & !PAWN_PROMOTION_RANK[color as usize]; 
 
     while from_bb != 0 {
         let from_index = from_bb.trailing_zeros() as u64;
@@ -123,5 +130,35 @@ fn extract_pawn_promotions(bb: Bitboard, promote_piece: Option<Piece>, color: Co
         )); 
     }
 
+    moves
+}
+
+fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitboard; 64], promote_piece: Option<Piece>, 
+    enemies_not_allies: Bitboard, color: Color) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new(); 
+    let mut from_bb = bb;
+
+    while from_bb != 0 {
+        let from_index = from_bb.trailing_zeros() as u64;
+        from_bb = from_bb.clear_bit(from_index);
+
+        let from = Square::try_from(from_index).unwrap(); 
+
+        let mut to_bb = attacks[from_index as usize] & enemies_not_allies;
+        while to_bb != 0 {
+            let to_index = to_bb.trailing_zeros() as u64;
+            to_bb = to_bb.clear_bit(to_index);
+            let to = Square::try_from(to_index).unwrap();
+
+            let captured_piece = board.get_piece_at(to_index); 
+            moves.push(Move::new_promotion(
+                from,
+                to,
+                color,
+                captured_piece,
+                promote_piece.expect("Piece passed explicitly."),
+            ))
+        } 
+    }
     moves
 }
