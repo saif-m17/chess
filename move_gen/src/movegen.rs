@@ -7,12 +7,15 @@ use crate::board::Board;
 pub fn get_king_moves(board: &Board, color: Color) -> Vec<Move>{
     let mut moves: Vec<Move> = Vec::new();
     let king_bb: Bitboard = board.pieces[color as usize][King as usize];
+    let enemies = board.get_pieces(color.opposite_color()); 
+    let allies = board.get_pieces(color); 
+    let enemies_not_allies = enemies & !allies;
 
     let king_index = king_bb.trailing_zeros() as u64; 
 
     let from = Square::try_from(king_index).unwrap();
 
-    let mut attacks = AttackTables::get().king_attacks[king_index as usize]; 
+    let mut attacks = AttackTables::get().king_attacks[king_index as usize] & enemies_not_allies; 
 
     while attacks != 0 {
         let to_index = attacks.trailing_zeros() as u64;
@@ -35,11 +38,15 @@ pub fn get_knight_moves(board: &Board, color: Color) -> Vec<Move> {
 
     let mut moves: Vec<Move> = Vec::new();
     let mut knight_bb: Bitboard = board.pieces[color as usize][Knight as usize];
+    let enemies = board.get_pieces(color.opposite_color()); 
+    let allies = board.get_pieces(color); 
+    let enemies_not_allies = enemies & !allies;
 
     while knight_bb != 0 {
         let knight = knight_bb.trailing_zeros() as u64;
+        knight_bb = knight_bb.clear_bit(knight); 
         let from = Square::try_from(knight).unwrap();
-        let mut attacks = AttackTables::get().knight_attacks[knight as usize]; 
+        let mut attacks = AttackTables::get().knight_attacks[knight as usize] & enemies_not_allies; 
 
         while attacks != 0 {
             let to_index = attacks.trailing_zeros() as u64;
