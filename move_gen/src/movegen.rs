@@ -138,7 +138,8 @@ fn extract_pawn_push_moves(bb: Bitboard, offset: i8, color:Color) -> Vec<Move> {
     moves
 }
 
-/// Extracts the pawn attack moves from without considering attacks that lead to promotion
+/// Extracts the pawn attack moves from without considering attacks that lead to promotion (from attack tables)
+/// no en passent yet
 fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboard; 64], 
     enemies_not_allies: Bitboard, color: Color) -> Vec<Move> {
 
@@ -191,7 +192,6 @@ fn extract_pawn_promotions(bb: Bitboard, promote_piece: Option<Piece>, color: Co
             promote_piece.expect("Passing piece explicitly"),
         )); 
     }
-
     moves
 }
 

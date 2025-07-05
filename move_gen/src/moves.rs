@@ -145,3 +145,31 @@ impl Move {
         matches!(self.move_type, MoveType::Castle { .. })
     }
 }
+
+#[derive(Clone, Copy)]
+pub enum Direction {
+    North = 0, South, East, West,
+    NorthEast, NorthWest, SouthEast, SouthWest,
+}
+
+pub fn rook_directions() -> &'static [Direction] {
+    &[Direction::North, Direction::South, Direction::East, Direction::West]
+}
+
+pub fn bishop_directions() -> &'static [Direction] {
+    &[
+        Direction::NorthEast, Direction::NorthWest,
+        Direction::SouthEast, Direction::SouthWest,
+    ]
+}
+
+pub const DIRECTION_COORDINATES: [(i8, i8); 8] = [
+    (1, 0), // North
+    (-1, 0), // South
+    (0, 1), // East
+    (0, -1), //West
+    (1, 1), // Northeast
+    (1, -1), // Northwest
+    (-1, 1), // Southeast
+    (-1, -1), // Southwest
+]; 
