@@ -3,7 +3,7 @@ use std::io::Write;
 use chess_core::moves::DIRECTION_COORDINATES;
 
 use chess_core::bitboards::{Bitboard, BitboardExt}; 
-use chess_core::moves::{Square, Direction}; 
+use chess_core::moves::Square; 
 
 fn main() {
     let mut rays = [[0u64; 8]; 64];
