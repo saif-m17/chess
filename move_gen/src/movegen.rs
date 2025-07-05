@@ -1,4 +1,4 @@
-use crate::attacktables::AttackTables;
+use crate::attacktables::ATTACK_TABLES;
 use crate::bitboards::{*};
 use crate::moves::{Color, Piece, Piece::*, Move, Square};
 use crate::board::Board; 
@@ -15,7 +15,7 @@ pub fn get_king_moves(board: &Board, color: Color) -> Vec<Move>{
 
     let from = Square::try_from(king_index).unwrap();
 
-    let mut attacks = AttackTables::get().king_attacks[king_index as usize] & enemies_not_allies; 
+    let mut attacks = ATTACK_TABLES.king_attacks[king_index as usize] & enemies_not_allies; 
 
     while attacks != 0 {
         let to_index = attacks.trailing_zeros() as u64;
@@ -46,7 +46,7 @@ pub fn get_knight_moves(board: &Board, color: Color) -> Vec<Move> {
         let knight = knight_bb.trailing_zeros() as u64;
         knight_bb = knight_bb.clear_bit(knight); 
         let from = Square::try_from(knight).unwrap();
-        let mut attacks = AttackTables::get().knight_attacks[knight as usize] & enemies_not_allies; 
+        let mut attacks = ATTACK_TABLES.knight_attacks[knight as usize] & enemies_not_allies; 
 
         while attacks != 0 {
             let to_index = attacks.trailing_zeros() as u64;
@@ -95,7 +95,7 @@ pub fn get_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     }
 
     // Pawn attacks excluding ones that result in promotion
-    let pawn_attacks_bbs = AttackTables::get().pawn_attacks[color as usize];
+    let pawn_attacks_bbs = ATTACK_TABLES.pawn_attacks[color as usize];
     let enemies = board.get_pieces(color.opposite_color());
     let allies = board.get_pieces(color); 
     let enemies_not_allies = enemies & !allies;
