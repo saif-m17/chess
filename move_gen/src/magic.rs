@@ -42,7 +42,8 @@ impl<const N: usize> Default for Magic<N> {
 type BishopMagic = Magic<{ 1 << BISHOP_INDEX_BITS }>;
 type RookMagic   = Magic<{ 1 << ROOK_INDEX_BITS }>;
 
-fn get_rook_magics(directions_list: [Direction; 4]) -> Vec<RookMagic> {
+fn get_rook_magics() -> Vec<RookMagic> {
+    let directions_list = ROOK_DIRECTIONS;
     let mut magics: Vec<RookMagic> = vec![RookMagic::default(); 64]; 
     for square in 0u8..64 {
         let directions = get_directions_bb(square, directions_list);
@@ -50,12 +51,28 @@ fn get_rook_magics(directions_list: [Direction; 4]) -> Vec<RookMagic> {
         loop {
             let candidate_magic = generate_magic(); 
             if let Ok(attack_table) = check_table(candidate_magic, rays, directions_list, square, ROOK_INDEX_BITS) {
-                magics[square as usize] = Magic::new_magic(candidate_magic, rays, attack_table); 
+                magics[square as usize] = RookMagic::new_magic(candidate_magic, rays, attack_table); 
                 break 
             }
         } 
     }
+    magics
+}
 
+fn get_bishop_magics() -> Vec<BishopMagic> {
+    let directions_list = BISHOP_DIRECTIONS;
+    let mut magics: Vec<BishopMagic> = vec![BishopMagic::default(); 64];
+    for square in 0u8..64 {
+        let directions = get_directions_bb(square, directions_list);
+        let rays = directions[0] | directions[1] | directions[2] | directions[3];
+        loop {
+            let candidate_magic = generate_magic();
+            if let Ok(attack_table) = check_table(candidate_magic, rays, directions_list, square, BISHOP_INDEX_BITS) {
+                magics[square as usize] = BishopMagic::new_magic(candidate_magic, rays, attack_table); 
+                break
+            }
+        }
+    }
 
     magics
 }
@@ -119,12 +136,12 @@ fn get_attacks(directions: [Direction; 4], blockers: Bitboard, square: u8) -> Bi
 }
 
 pub enum MagicError {
-    CollisionDetected(usize), // store index or other info
+    CollisionDetected(usize),
 }
 
 
-// static BISHOP_MAGICS: [BishopMagic; 64] = [...];
-static ROOK_MAGICS: Lazy<Vec<RookMagic>> = Lazy::new(|| get_rook_magics(ROOK_DIRECTIONS));
+static ROOK_MAGICS: Lazy<Vec<RookMagic>> = Lazy::new(|| get_rook_magics());
+static BISHOP_MAGICS: Lazy<Vec<BishopMagic>> = Lazy::new(||get_bishop_magics()); 
 
 
 
