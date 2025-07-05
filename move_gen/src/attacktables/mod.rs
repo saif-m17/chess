@@ -1,5 +1,8 @@
 use crate::bitboards::{*};
 use crate::bitboards::Bitboard;
+
+mod rays_table;
+pub use rays_table::RAYS;
 pub struct AttackTables {
     pub pawn_attacks: [[Bitboard; 64]; 2],
     pub knight_attacks: [Bitboard; 64],

@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Write;
 use chess_core::moves::DIRECTION_COORDINATES;
 
-use chess_core::bitboards::Bitboard; 
+use chess_core::bitboards::{Bitboard, BitboardExt}; 
 use chess_core::moves::{Square, Direction}; 
 
 fn main() {
@@ -21,7 +21,7 @@ fn compute_ray(square: u8, dir: u8) -> Bitboard {
     let mut result = 0u64;
     let mut current = Square::try_from(square as u64).unwrap();
 
-    while let Some(next) = step_in_direction(current, dir) {
+    while let Some(next) = step_in_direction(current as u8, dir) {
         result |= Bitboard::from_square(next);
         current = next;
     }
@@ -58,7 +58,7 @@ fn write_rays_to_file(rays: &[[u64; 8]; 64]) {
     for row in rays {
         write!(file, "    [").unwrap();
         for &bb in row {
-            write!(file, "Bitboard(0x{:016x}), ", bb).unwrap();
+            write!(file, "0x{:016x}, ", bb).unwrap();
         }
         writeln!(file, "],").unwrap();
     }
