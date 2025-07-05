@@ -1,3 +1,5 @@
+use crate::moves::Square; 
+
 // Rank constants
 pub const RANK_1: u64 = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_11111111;
 pub const RANK_2: u64 = 0b00000000_00000000_00000000_00000000_00000000_00000000_11111111_00000000;
@@ -33,6 +35,7 @@ pub trait BitboardExt {
     fn shift_south(self) -> Self;
     fn shift_east(self) -> Self;
     fn shift_west(self) -> Self;
+    fn from_square(square: Square) -> Self; 
 }
 
 impl BitboardExt for Bitboard {
@@ -62,6 +65,10 @@ impl BitboardExt for Bitboard {
 
     fn shift_east(self) -> Self {
         (self & !FILE_A) << 1 
+    }
+
+    fn from_square(square: Square) -> Self {
+        1u64 << (square as u64)
     }
 }
 
