@@ -1,0 +1,69 @@
+use std::fs::File;
+use std::io::Write;
+use chess_core::moves::DIRECTION_COORDINATES;
+
+use chess_core::bitboards::Bitboard; 
+use chess_core::board::{Square, Direction}; 
+
+fn main() {
+    let mut rays = [[0u64; 8]; 64];
+
+    for square in 0..64 {
+        for dir in 0..8 {
+            rays[square][dir] = compute_ray(square as u8, dir as u8);
+        }
+    }
+
+    write_rays_to_file(&rays);
+}
+
+fn compute_ray(square: u8, dir: u8) -> Bitboard {
+    let mut result = 0u64;
+    let mut current = Square::try_from(square as u64).unwrap();
+
+    while let Some(next) = step_in_direction(current, dir) {
+        result |= Bitboard::from_square(next);
+        current = next;
+    }
+
+    result
+}
+
+
+fn step_in_direction(square: u8, dir: u8) -> Option<Square> {
+    let idx = square as i8; 
+    let rank = idx / 8;
+    let file = idx % 8; 
+
+    let (dr, df) = DIRECTION_COORDINATES[dir as usize];
+    let new_rank = rank + dr;
+    let new_file = file + df; 
+
+    if (0..8).contains(&new_rank) && (0..8).contains(&new_file) {
+        let new_index = (new_rank * 8 + new_file) as u8;
+        Square::try_from(new_index as u64).ok()
+    } else {
+        None
+    } 
+
+}
+
+fn write_rays_to_file(rays: &[[u64; 8]; 64]) {
+    let path = "src/attacktables/rays_table.rs";
+    let mut file = File::create(path).unwrap();
+
+    writeln!(file, "use crate::bitboards::Bitboard;").unwrap();
+    writeln!(file, "pub static RAYS: [[Bitboard; 8]; 64] = [").unwrap();
+
+    for row in rays {
+        write!(file, "    [").unwrap();
+        for &bb in row {
+            write!(file, "Bitboard(0x{:016x}), ", bb).unwrap();
+        }
+        writeln!(file, "],").unwrap();
+    }
+
+    writeln!(file, "];").unwrap();
+
+    println!("Wrote rays table to `{}`", path);
+}

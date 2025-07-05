@@ -5,7 +5,7 @@ edition = "2024"
 
 [lib]
 name = "chess_core"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 num_enum = "0.7"
