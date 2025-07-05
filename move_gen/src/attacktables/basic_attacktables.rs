@@ -1,10 +1,5 @@
 use crate::bitboards::Bitboard;
-
-pub struct AttackTables {
-    pub pawn_attacks: [[Bitboard; 64]; 2],
-    pub knight_attacks: [Bitboard; 64],
-    pub king_attacks: [Bitboard; 64],
-}
+use crate::attacktables::AttackTables; 
 
 pub static ATTACK_TABLES: AttackTables = AttackTables {
     pawn_attacks: [
