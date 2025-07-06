@@ -1,10 +1,9 @@
 use std::fs::File;
-use std::fs::OpenOptions;
 use std::io::Write;
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 
-use chess_core::attacktables::{Magic, MagicError, RAYS};
+use chess_core::attacktables::{Magic, MagicError, RAYS, RAYS_WITH_EDGE, ROOK_INDEX_BITS, BISHOP_INDEX_BITS};
 use chess_core::bitboards::{*}; 
 use chess_core::moves::Direction;
 
@@ -13,19 +12,19 @@ const ROOK_DIRECTIONS: [Direction; 4] = [Direction::North, Direction::South, Dir
 const BISHOP_DIRECTIONS: [Direction; 4] = [Direction::NorthEast, Direction::NorthWest, Direction::SouthEast, Direction::SouthWest]; 
 
 fn main() {
-    let bishop_magics = get_magics(BISHOP_DIRECTIONS);
-    //let rook_magics = get_magics(ROOK_DIRECTIONS);
-    //write_magics_to_file(rook_magics, bishop_magics);
+    let bishop_magics = get_magics(BISHOP_DIRECTIONS, BISHOP_INDEX_BITS);
+    let rook_magics = get_magics(ROOK_DIRECTIONS, ROOK_INDEX_BITS);
+    write_magics_to_file(rook_magics, bishop_magics);
 }
 
-fn get_magics(directions_list: [Direction; 4]) -> Vec<Magic> {
+fn get_magics(directions_list: [Direction; 4], index_bits: usize) -> Vec<Magic> {
     let mut magics: Vec<Magic> = vec![Magic::default(1); 64]; 
     let mut rng = StdRng::seed_from_u64(300);
 
     for square in 0u8..64 {
         let directions = get_directions_bb(square, directions_list);
         let rays = directions[0] | directions[1] | directions[2] | directions[3]; 
-        let index_bits = count_relevant_bits(rays); 
+        // let index_bits = count_relevant_bits(rays); 
         let mut attempt_count = 1; 
         loop {
             let candidate_magic = if attempt_count % 1000 == 0 {
@@ -74,30 +73,10 @@ fn get_directions_bb(square: u8, directions_list: [Direction; 4]) -> [Bitboard; 
 
 fn get_attacks(directions: [Direction; 4], blockers: Bitboard, square: u8) -> Bitboard {
 
-    // DEBUGGGING
-    let path = "src/attacktables/bishopattacks.txt";
-    let mut file = OpenOptions::new()
-                            .write(true)
-                            .create(true)
-                            .append(true)
-                            .open(path)
-                            .unwrap();
-
-    // END DEBUGGING
-
     let mut attacks = 0u64; 
 
-    // DEBUGGING
-    writeln!(file, "For square {square} Displaying blockers:").unwrap();
-    let s = blockers.to_string(); 
-    writeln!(file, "{}", s).unwrap();  
-    writeln!(file, "").unwrap(); 
-
-    // END DEBUGGING
-
-
     for direction in directions {
-        let direction_ray = RAYS[square as usize][direction as usize];
+        let direction_ray = RAYS_WITH_EDGE[square as usize][direction as usize];
         let relevant_blockers = direction_ray & blockers; 
         let first_blocker = if relevant_blockers != 0 {
             match direction {
@@ -115,7 +94,7 @@ fn get_attacks(directions: [Direction; 4], blockers: Bitboard, square: u8) -> Bi
         };
         
         let attack_this_direction = if first_blocker < 64 {
-            let first_blocker_ray = RAYS[first_blocker as usize][direction as usize];
+            let first_blocker_ray = RAYS_WITH_EDGE[first_blocker as usize][direction as usize];
             first_blocker_ray ^ direction_ray 
         } else {
             direction_ray
@@ -123,16 +102,6 @@ fn get_attacks(directions: [Direction; 4], blockers: Bitboard, square: u8) -> Bi
 
         attacks |= attack_this_direction; 
     }
-
-    // DEBUGGING 
-
-    writeln!(file, "Displaying attackers: ").unwrap();
-    let b = attacks.to_string(); 
-    writeln!(file, "{}", b).unwrap();
-    writeln!(file, "").unwrap();
-
-    // END DEBUGGING
-
     attacks
 }
 

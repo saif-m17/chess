@@ -10,7 +10,7 @@ fn main() {
 
     for square in 0..64 {
         for dir in 0..8 {
-            rays[square][dir] = compute_ray(square as u8, dir as u8);
+            rays[square][dir] = compute_ray_include_edge(square as u8, dir as u8);
         }
     }
 
@@ -29,6 +29,19 @@ fn compute_ray(square: u8, dir: u8) -> Bitboard {
     }
 
     result
+}
+
+fn compute_ray_include_edge(square: u8, dir: u8) -> Bitboard {
+    let mut result = 0u64;
+    let mut current = Square::try_from(square as u64).unwrap();
+
+    while let Some(next) = step_in_direction(current as u8, dir) {
+        result |= Bitboard::from_square(next);
+        current = next;
+    }
+
+    result
+
 }
 
 
@@ -51,11 +64,11 @@ fn step_in_direction(square: u8, dir: u8) -> Option<Square> {
 }
 
 fn write_rays_to_file(rays: &[[u64; 8]; 64]) {
-    let path = "src/attacktables/rays_table.rs";
+    let path = "src/attacktables/rays_table_to_edge.rs"; // changed for including edge of board
     let mut file = File::create(path).unwrap();
 
     writeln!(file, "use crate::bitboards::Bitboard;").unwrap();
-    writeln!(file, "pub static RAYS: [[Bitboard; 8]; 64] = [").unwrap();
+    writeln!(file, "pub static RAYS_WITH_EDGE: [[Bitboard; 8]; 64] = [").unwrap(); // change to inclde edge of board 
 
     for row in rays {
         write!(file, "    [").unwrap();

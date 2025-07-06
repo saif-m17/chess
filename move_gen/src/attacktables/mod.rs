@@ -2,11 +2,17 @@ use crate::bitboards::Bitboard;
 use crate::moves::Direction; 
 
 mod rays_table;
-use rand::seq::index;
 pub use rays_table::RAYS;
 
+mod rays_table_to_edge;
+pub use rays_table_to_edge::RAYS_WITH_EDGE; 
+
 mod basic_attacktables;
-pub use basic_attacktables::ATTACK_TABLES; 
+pub use basic_attacktables::ATTACK_TABLES;
+
+mod magic_tables;
+pub use magic_tables::BISHOP_MAGICS;
+pub use magic_tables::ROOK_MAGICS; 
 
 pub const BISHOP_INDEX_BITS: usize = 9;
 pub const ROOK_INDEX_BITS: usize = 12;
