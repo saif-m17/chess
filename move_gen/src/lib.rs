@@ -3,7 +3,6 @@ pub mod moves;
 pub mod bitboards;
 pub mod movegen; 
 pub mod attacktables;
-pub mod magic; 
 
 
 

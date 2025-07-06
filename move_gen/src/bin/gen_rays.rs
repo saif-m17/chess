@@ -22,7 +22,9 @@ fn compute_ray(square: u8, dir: u8) -> Bitboard {
     let mut current = Square::try_from(square as u64).unwrap();
 
     while let Some(next) = step_in_direction(current as u8, dir) {
-        result |= Bitboard::from_square(next);
+        if step_in_direction(next as u8, dir).is_some() {
+            result |= Bitboard::from_square(next);
+        }
         current = next;
     }
 

@@ -12,25 +12,32 @@ const ROOK_DIRECTIONS: [Direction; 4] = [Direction::North, Direction::South, Dir
 const BISHOP_DIRECTIONS: [Direction; 4] = [Direction::NorthEast, Direction::NorthWest, Direction::SouthEast, Direction::SouthWest]; 
 
 fn main() {
-    let rook_magics = get_rook_magics();
     let bishop_magics = get_bishop_magics();
+    let rook_magics = get_rook_magics();
     write_magics_to_file(rook_magics, bishop_magics);
 }
 
-fn get_rook_magics() -> Vec<RookMagic> {
+fn get_rook_magics() -> Vec<Magic> {
     let directions_list = ROOK_DIRECTIONS;
-    let mut magics: Vec<RookMagic> = vec![RookMagic::default(); 64]; 
+    let mut magics: Vec<Magic> = vec![Magic::default(); 64]; 
     let mut rng = StdRng::seed_from_u64(300);
 
     for square in 0u8..64 {
         let directions = get_directions_bb(square, directions_list);
         let rays = directions[0] | directions[1] | directions[2] | directions[3]; 
+        let index_bits = count_relevant_bits(rays); 
+        let mut attempt_count = 1; 
         loop {
-            let candidate_magic = rng.r#gen::<u64>() & rng.r#gen::<u64>() & rng.r#gen::<u64>();
-            if let Ok(attack_table) = check_table(candidate_magic, rays, directions_list, square, ROOK_INDEX_BITS) {
+            let candidate_magic = if attempt_count % 1000 == 0 {
+                rng.r#gen::<u64>() & rng.r#gen::<u64>() & rng.r#gen::<u64>()
+            } else {
+                rng.r#gen::<u64>() & rng.r#gen::<u64>()
+            };
+            if let Ok(attack_table) = check_table(candidate_magic, rays, directions_list, square, index_bits) {
                 magics[square as usize] = RookMagic::new_magic(candidate_magic, rays, attack_table); 
                 break 
             }
+            attempt_count += 1;
         } 
     }
     magics
@@ -39,16 +46,26 @@ fn get_rook_magics() -> Vec<RookMagic> {
 fn get_bishop_magics() -> Vec<BishopMagic> {
     let directions_list = BISHOP_DIRECTIONS;
     let mut magics: Vec<BishopMagic> = vec![BishopMagic::default(); 64];
-    let mut rng = StdRng::seed_from_u64(300);
+    let mut rng = StdRng::seed_from_u64(227);
     for square in 0u8..64 {
+        // println!("Starting square {}", square);
         let directions = get_directions_bb(square, directions_list);
+        // println!("Square {}: NE={:016x}, NW={:016x}, SE={:016x}, SW={:016x}", 
+        // square, directions[0], directions[1], directions[2], directions[3]);
         let rays = directions[0] | directions[1] | directions[2] | directions[3];
+        // println!("Rays = {rays}"); 
+        let mut attempt_count = 1; 
         loop {
-            let candidate_magic = rng.r#gen::<u64>();
+            let candidate_magic = if attempt_count % 1000 == 0 {
+                rng.r#gen::<u64>() & rng.r#gen::<u64>() & rng.r#gen::<u64>()
+            } else {
+                rng.r#gen::<u64>() & rng.r#gen::<u64>()
+            };
             if let Ok(attack_table) = check_table(candidate_magic, rays, directions_list, square, BISHOP_INDEX_BITS) {
                 magics[square as usize] = BishopMagic::new_magic(candidate_magic, rays, attack_table); 
                 break
             }
+            attempt_count += 1;
         }
     }
 
@@ -56,21 +73,23 @@ fn get_bishop_magics() -> Vec<BishopMagic> {
 }
 
 fn check_table(candidate_magic: u64, rays: Bitboard, directions_list: [Direction; 4], square: u8, index_bits: usize) -> Result<Vec<Option<Bitboard>>, MagicError>   {
-    let mut attack_table: Vec<Option<Bitboard>> =  vec![None; 1 << index_bits];
-    let mut blockers = 0u64;
+    let index_bits2 = count_relevant_bits(rays);
+    let mut attack_table: Vec<Option<Bitboard>> =  vec![None; 1 << index_bits2];
+    let mut blockers = rays; 
 
     loop {
-        let magic_index = blockers.wrapping_mul(candidate_magic) >> (64 - index_bits);
+        let magic_index = blockers.wrapping_mul(candidate_magic) >> (64 - index_bits2);
         if attack_table[magic_index as usize].is_some() {
             return Err(MagicError::CollisionDetected(magic_index as usize))
         } else {
-            let attacks = get_attacks(directions_list, blockers, square); 
+            let attacks = get_attacks(directions_list, blockers, square);
+            // println!("Square {}, blockers: 0x{:016x}, attacks: 0x{:016x}", square, blockers, attacks); 
             attack_table[magic_index as usize] = Some(attacks); 
         }
-        blockers = blockers.wrapping_sub(rays) & rays;
         if blockers == 0 {
             break; 
         } 
+        blockers = blockers.wrapping_sub(1) & rays;
     }
     Ok(attack_table)
 
@@ -103,17 +122,20 @@ fn get_attacks(directions: [Direction; 4], blockers: Bitboard, square: u8) -> Bi
         } else {
             64
         }; 
-        let mut attack_this_direction: u64 = 0;
-        if first_blocker != 64 {
+        let attack_this_direction = if first_blocker < 64 {
             let first_blocker_ray = RAYS[first_blocker as usize][direction as usize];
-            attack_this_direction = first_blocker_ray ^ direction_ray;  
+            first_blocker_ray ^ direction_ray 
         } else {
-            attack_this_direction = direction_ray;
-        }
+            direction_ray
+        }; 
 
         attacks |= attack_this_direction; 
     }
     attacks
+}
+
+fn count_relevant_bits(rays: Bitboard) -> usize {
+    rays.count_ones() as usize
 }
 
 fn write_magics_to_file(rook_magics: Vec<RookMagic>, bishop_magics: Vec<BishopMagic>) {
