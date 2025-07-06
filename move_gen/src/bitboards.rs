@@ -38,6 +38,8 @@ pub trait BitboardExt {
     fn shift_west(self) -> Self;
     fn from_square(square: Square) -> Self; 
     fn relevant_bits(self, square: Square, direction: Direction) -> usize;
+    fn display(self); 
+    fn to_string(self) -> String; 
 }
 
 impl BitboardExt for Bitboard {
@@ -77,6 +79,36 @@ impl BitboardExt for Bitboard {
         let ray = RAYS[square as usize][direction as usize];
         let relevant_blockers = self & ray;
         relevant_blockers.count_ones() as usize 
+    }
+
+    fn display(self) {
+        for rank in (0..8).rev() {
+            for file in 0..8 {
+                let square = rank * 8 + file;
+                let bit = (self >> square) & 1;
+                print!("{} ", bit);
+            }
+            println!();
+        }
+        println!("0x{:016x}", self);
+    }
+
+    fn to_string(self) -> String {
+        let mut board_str = String::new();
+        for rank in (0..8).rev() {
+            for file in 0..8 {
+                let square = rank * 8 + file;
+                let bit = 1u64 << square;
+                if self & bit != 0 {
+                    board_str.push('1');
+                } else {
+                    board_str.push('.');
+                }
+            }
+            board_str.push('\n');
+        }
+        board_str
+
     }
 }
 
