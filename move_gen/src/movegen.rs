@@ -1,7 +1,20 @@
 use crate::attacktables::ATTACK_TABLES;
 use crate::bitboards::{*};
 use crate::moves::{Color, Piece, Piece::*, Move, Square};
-use crate::board::Board; 
+use crate::board::Board;
+
+/// Returns vector of rook moves
+pub fn get_rook_moves(board: &Board, color: Color) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+
+    moves
+}
+
+pub fn get_bishop_moves(board: &Board, color: Color) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+
+    moves
+}
 
 /// Returns vector of king moves
 pub fn get_king_moves(board: &Board, color: Color) -> Vec<Move>{

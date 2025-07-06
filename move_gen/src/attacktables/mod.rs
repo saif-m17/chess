@@ -2,6 +2,7 @@ use crate::bitboards::Bitboard;
 use crate::moves::Direction; 
 
 mod rays_table;
+use rand::seq::index;
 pub use rays_table::RAYS;
 
 mod rays_table_to_edge;
@@ -46,7 +47,7 @@ impl Magic {
             magic_num: 0,
             direction_mask: 0,
             index_bits,
-            attack_table: vec![None; 1 << index_bits]
+            attack_table: vec![None; 1 << index_bits],
         }
     }
 }

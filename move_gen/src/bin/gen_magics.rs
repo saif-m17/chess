@@ -3,7 +3,7 @@ use std::io::Write;
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 
-use chess_core::attacktables::{Magic, MagicError, RAYS, RAYS_WITH_EDGE, ROOK_INDEX_BITS, BISHOP_INDEX_BITS};
+use chess_core::attacktables::{Magic, MagicError, RAYS, RAYS_WITH_EDGE};
 use chess_core::bitboards::{*}; 
 use chess_core::moves::Direction;
 
@@ -12,19 +12,19 @@ const ROOK_DIRECTIONS: [Direction; 4] = [Direction::North, Direction::South, Dir
 const BISHOP_DIRECTIONS: [Direction; 4] = [Direction::NorthEast, Direction::NorthWest, Direction::SouthEast, Direction::SouthWest]; 
 
 fn main() {
-    let bishop_magics = get_magics(BISHOP_DIRECTIONS, BISHOP_INDEX_BITS);
-    let rook_magics = get_magics(ROOK_DIRECTIONS, ROOK_INDEX_BITS);
+    let bishop_magics = get_magics(BISHOP_DIRECTIONS);
+    let rook_magics = get_magics(ROOK_DIRECTIONS);
     write_magics_to_file(rook_magics, bishop_magics);
 }
 
-fn get_magics(directions_list: [Direction; 4], index_bits: usize) -> Vec<Magic> {
+fn get_magics(directions_list: [Direction; 4]) -> Vec<Magic> {
     let mut magics: Vec<Magic> = vec![Magic::default(1); 64]; 
     let mut rng = StdRng::seed_from_u64(300);
 
     for square in 0u8..64 {
         let directions = get_directions_bb(square, directions_list);
         let rays = directions[0] | directions[1] | directions[2] | directions[3]; 
-        // let index_bits = count_relevant_bits(rays); 
+        let index_bits = count_relevant_bits(rays); 
         let mut attempt_count = 1; 
         loop {
             let candidate_magic = if attempt_count % 1000 == 0 {
@@ -113,18 +113,19 @@ fn write_magics_to_file(rook_magics: Vec<Magic>, bishop_magics: Vec<Magic>) {
     let path = "src/attacktables/magic_tables.rs";
     let mut file = File::create(path).unwrap();
 
+    writeln!(file, "use once_cell::sync::Lazy;").unwrap();
     writeln!(file, "use crate::bitboards::Bitboard;").unwrap();
     writeln!(file, "use crate::attacktables::Magic;").unwrap();
     writeln!(file, "").unwrap();
 
     // Write rook magics
-    writeln!(file, "pub static ROOK_MAGICS: [Magic; 64] = [").unwrap();
-    for (i, magic) in rook_magics.iter().enumerate() {
+    writeln!(file, "pub static ROOK_MAGICS: Lazy<[Magic; 64]> = Lazy::new(|| [").unwrap();
+    for magic in &rook_magics {
         writeln!(file, "    Magic {{").unwrap();
         writeln!(file, "        magic_num: 0x{:016x},", magic.magic_num).unwrap();
         writeln!(file, "        direction_mask: 0x{:016x},", magic.direction_mask).unwrap();
         writeln!(file, "        index_bits: {},", magic.index_bits).unwrap();
-        writeln!(file, "        attack_table: [").unwrap();
+        writeln!(file, "        attack_table: vec![").unwrap();
 
         for attack in &magic.attack_table {
             match attack {
@@ -136,17 +137,17 @@ fn write_magics_to_file(rook_magics: Vec<Magic>, bishop_magics: Vec<Magic>) {
         writeln!(file, "        ],").unwrap();
         writeln!(file, "    }},").unwrap();
     }
-    writeln!(file, "];").unwrap();
+    writeln!(file, "]);").unwrap();
     writeln!(file).unwrap();
 
     // Write bishop magics
-    writeln!(file, "pub static BISHOP_MAGICS: [Magic; 64] = [").unwrap();
-    for (i, magic) in bishop_magics.iter().enumerate() {
+    writeln!(file, "pub static BISHOP_MAGICS: Lazy<[Magic; 64]> = Lazy::new(|| [").unwrap();
+    for magic in &bishop_magics {
         writeln!(file, "    Magic {{").unwrap();
         writeln!(file, "        magic_num: 0x{:016x},", magic.magic_num).unwrap();
         writeln!(file, "        direction_mask: 0x{:016x},", magic.direction_mask).unwrap();
         writeln!(file, "        index_bits: {},", magic.index_bits).unwrap();
-        writeln!(file, "        attack_table: [").unwrap();
+        writeln!(file, "        attack_table: vec![").unwrap();
 
         for attack in &magic.attack_table {
             match attack {
@@ -158,7 +159,7 @@ fn write_magics_to_file(rook_magics: Vec<Magic>, bishop_magics: Vec<Magic>) {
         writeln!(file, "        ],").unwrap();
         writeln!(file, "    }},").unwrap();
     }
-    writeln!(file, "];").unwrap();
+    writeln!(file, "]);").unwrap();
 
     println!("Magic tables written to {}", path);
 }
