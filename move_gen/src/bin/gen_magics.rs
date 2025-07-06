@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::Write;
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
@@ -13,8 +14,8 @@ const BISHOP_DIRECTIONS: [Direction; 4] = [Direction::NorthEast, Direction::Nort
 
 fn main() {
     let bishop_magics = get_magics(BISHOP_DIRECTIONS);
-    let rook_magics = get_magics(ROOK_DIRECTIONS);
-    write_magics_to_file(rook_magics, bishop_magics);
+    //let rook_magics = get_magics(ROOK_DIRECTIONS);
+    //write_magics_to_file(rook_magics, bishop_magics);
 }
 
 fn get_magics(directions_list: [Direction; 4]) -> Vec<Magic> {
@@ -72,7 +73,28 @@ fn get_directions_bb(square: u8, directions_list: [Direction; 4]) -> [Bitboard; 
 }
 
 fn get_attacks(directions: [Direction; 4], blockers: Bitboard, square: u8) -> Bitboard {
-    let mut attacks = 0u64;  
+
+    // DEBUGGGING
+    let path = "src/attacktables/bishopattacks.txt";
+    let mut file = OpenOptions::new()
+                            .write(true)
+                            .create(true)
+                            .append(true)
+                            .open(path)
+                            .unwrap();
+
+    // END DEBUGGING
+
+    let mut attacks = 0u64; 
+
+    // DEBUGGING
+    writeln!(file, "For square {square} Displaying blockers:").unwrap();
+    let s = blockers.to_string(); 
+    writeln!(file, "{}", s).unwrap();  
+    writeln!(file, "").unwrap(); 
+
+    // END DEBUGGING
+
 
     for direction in directions {
         let direction_ray = RAYS[square as usize][direction as usize];
@@ -101,6 +123,16 @@ fn get_attacks(directions: [Direction; 4], blockers: Bitboard, square: u8) -> Bi
 
         attacks |= attack_this_direction; 
     }
+
+    // DEBUGGING 
+
+    writeln!(file, "Displaying attackers: ").unwrap();
+    let b = attacks.to_string(); 
+    writeln!(file, "{}", b).unwrap();
+    writeln!(file, "").unwrap();
+
+    // END DEBUGGING
+
     attacks
 }
 
