@@ -2,6 +2,7 @@ use crate::bitboards::Bitboard;
 use crate::moves::Direction; 
 
 mod rays_table;
+use rand::seq::index;
 pub use rays_table::RAYS;
 
 mod basic_attacktables;
@@ -17,34 +18,32 @@ pub struct AttackTables {
 }
 
 #[derive(Clone)]
-pub struct Magic<const N: usize> {
+pub struct Magic {
     pub magic_num: u64,
-    pub direction_mask: Bitboard, 
+    pub direction_mask: Bitboard,
+    pub index_bits: usize, 
     pub attack_table: Vec<Option<Bitboard>>, 
 }
 
-impl<const N: usize> Magic<N> {
-    pub fn new_magic(magic_num: u64, direction_mask: Bitboard, attack_table: Vec<Option<Bitboard>>) -> Magic<N> {
+impl Magic {
+    pub fn new_magic(magic_num: u64, direction_mask: Bitboard, index_bits: usize, attack_table: Vec<Option<Bitboard>>) -> Magic {
         Magic {
             magic_num,
             direction_mask,
+            index_bits,
             attack_table,
         }
     }
-}
 
-impl<const N: usize> Default for Magic<N> {
-    fn default() -> Self {
+    pub fn default(index_bits: usize) -> Self {
         Magic {
             magic_num: 0,
             direction_mask: 0,
-            attack_table: vec![None; N],
+            index_bits,
+            attack_table: vec![None; 1 << index_bits]
         }
     }
 }
-
-pub type BishopMagic = Magic<{ 1 << BISHOP_INDEX_BITS }>;
-pub type RookMagic   = Magic<{ 1 << ROOK_INDEX_BITS }>;
 
 pub enum MagicError {
     CollisionDetected(usize),

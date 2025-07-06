@@ -146,7 +146,7 @@ impl Move {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Direction {
     North = 0, South, East, West,
     NorthEast, NorthWest, SouthEast, SouthWest,

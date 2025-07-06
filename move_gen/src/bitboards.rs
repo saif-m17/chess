@@ -1,4 +1,5 @@
-use crate::moves::Square; 
+use crate::moves::{Square, Direction}; 
+use crate::attacktables::RAYS; 
 
 // Rank constants
 pub const RANK_1: u64 = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_11111111;
@@ -36,6 +37,7 @@ pub trait BitboardExt {
     fn shift_east(self) -> Self;
     fn shift_west(self) -> Self;
     fn from_square(square: Square) -> Self; 
+    fn relevant_bits(self, square: Square, direction: Direction) -> usize;
 }
 
 impl BitboardExt for Bitboard {
@@ -69,6 +71,12 @@ impl BitboardExt for Bitboard {
 
     fn from_square(square: Square) -> Self {
         1u64 << (square as u64)
+    }
+
+    fn relevant_bits(self, square: Square, direction: Direction) -> usize {
+        let ray = RAYS[square as usize][direction as usize];
+        let relevant_blockers = self & ray;
+        relevant_blockers.count_ones() as usize 
     }
 }
 
