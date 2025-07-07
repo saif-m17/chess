@@ -1,4 +1,4 @@
-use crate::moves::{Square, Direction, Direction::*}; 
+use crate::moves::{Square, Direction}; 
 use crate::attacktables::RAYS; 
 
 // Rank constants

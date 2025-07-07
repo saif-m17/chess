@@ -1,10 +1,10 @@
-use crate::attacktables::{ATTACK_TABLES, RAYS, RAYS_WITH_EDGE, ROOK_MAGICS, BISHOP_MAGICS};
+use crate::attacktables::{ATTACK_TABLES, RAYS, ROOK_MAGICS, BISHOP_MAGICS};
 use crate::bitboards::{*};
 use crate::moves::{Color, Piece, Piece::*, Move, Square, Direction};
 use crate::board::Board;
 
 /// Returns vector of all pseudo-legal moves
-pub fn get_pseudo_legal_moves(board: &Board, color: Color) {
+pub fn get_pseudo_legal_moves(board: &Board, color: Color) -> Vec<Move> {
     let mut moves = Vec::new();
 
     moves.extend(get_pawn_moves(board, color));
@@ -381,7 +381,7 @@ fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitbo
 
 /// Returns bitboard of rays in all directions given in directions_list originating from square.
 /// Doesnt include edge squares - used for magic index. 
-fn get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboard {
+fn _get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboard {
     let mut directions_bb = 0u64;
     for direction in directions_list {
         directions_bb |= RAYS[square as usize][direction as usize]; 
