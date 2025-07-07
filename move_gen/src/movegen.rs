@@ -3,6 +3,80 @@ use crate::bitboards::{*};
 use crate::moves::{Color, Piece, Piece::*, Move, Square, Direction};
 use crate::board::Board;
 
+/// Returns vector of all pseudo-legal moves
+pub fn get_pseudo_legal_moves(board: &Board, color: Color) {
+    let mut moves = Vec::new();
+
+    moves.extend(get_pawn_moves(board, color));
+    moves.extend(get_knight_moves(board, color));
+    moves.extend(get_bishop_moves(board, color));
+    moves.extend(get_rook_moves(board, color));
+    moves.extend(get_queen_moves(board, color));
+    moves.extend(get_king_moves(board, color));
+
+    moves
+}
+
+/// Returns vector of queen moves
+pub fn get_queen_moves(board: &Board, color: Color) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+    let queen_bb = board.pieces[color as usize][Queen as usize];
+    let queen_index = queen_bb.trailing_zeros() as u64; 
+
+    let from = Square::try_from(queen_index).unwrap();
+
+    let enemies = board.get_pieces(color.opposite_color());
+    let allies = board.get_pieces(color);
+    let enemies_not_allies = enemies & !allies;
+    let all_pieces = board.get_all_pieces(); 
+
+    // Getting moves in rook directions
+    let rook_magic = &ROOK_MAGICS[queen_index as usize];
+    let rook_blockers = rook_magic.direction_mask & all_pieces;
+    let index = rook_blockers.wrapping_mul(rook_magic.magic_num) >> (64 - rook_magic.index_bits);
+    let mut rook_attacks = rook_magic.attack_table[index as usize].unwrap();
+    rook_attacks = rook_attacks & enemies_not_allies;
+
+    while rook_attacks != 0 {
+        let to_index = rook_attacks.trailing_zeros() as u64;
+        rook_attacks = rook_attacks.clear_bit(to_index);
+        let to = Square::try_from(to_index).unwrap();
+
+        let captured_piece = board.get_piece_at(to_index);
+        moves.push(Move::new_normal(
+            from,
+            to, 
+            Queen,
+            color,
+            captured_piece,
+        )) 
+    }
+
+    // Getting moves in bishop directions
+    let bishop_magic = &BISHOP_MAGICS[queen_index as usize];
+    let bishop_blockers = bishop_magic.direction_mask & all_pieces;
+    let index = bishop_blockers.wrapping_mul(bishop_magic.magic_num) >> (64 - bishop_magic.index_bits);
+    let mut bishop_attacks = bishop_magic.attack_table[index as usize].unwrap();
+    bishop_attacks = bishop_attacks & enemies_not_allies;
+
+    while bishop_attacks != 0 {
+        let to_index = bishop_attacks.trailing_zeros() as u64;
+        bishop_attacks = bishop_attacks.clear_bit(to_index);
+        let to = Square::try_from(to_index).unwrap();
+
+        let captured_piece = board.get_piece_at(to_index);
+        moves.push(Move::new_normal(
+            from,
+            to, 
+            Queen,
+            color,
+            captured_piece,
+        )) 
+    }
+
+    moves
+}
+
 /// Returns vector of rook moves
 pub fn get_rook_moves(board: &Board, color: Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
