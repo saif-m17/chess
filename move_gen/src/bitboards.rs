@@ -1,4 +1,4 @@
-use crate::moves::{Square, Direction}; 
+use crate::moves::{Square, Direction, Direction::*}; 
 use crate::attacktables::RAYS; 
 
 // Rank constants
@@ -179,3 +179,10 @@ pub const fn gen_king_attacks(bb: Bitboard) -> Bitboard {
 
     move1 | move2 | move3 | move4 | move5 | move6 | move7 | move8 
 }
+
+// Sliding Pieces related constants
+pub const ROOK_DIRECTIONS: [Direction; 4] = [Direction::North, Direction::South, Direction::East, Direction::West];
+pub const BISHOP_DIRECTIONS: [Direction; 4] = [Direction::NorthEast, Direction::NorthWest, Direction::SouthEast, Direction::SouthWest];
+pub const QUEEN_DIRECTIONS: [Direction; 8] = [
+    Direction::North, Direction::South, Direction::East, Direction::West,
+    Direction::NorthEast, Direction::NorthWest, Direction::SouthEast, Direction::SouthWest]; 

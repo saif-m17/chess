@@ -1,18 +1,85 @@
-use crate::attacktables::ATTACK_TABLES;
+use crate::attacktables::{ATTACK_TABLES, RAYS, RAYS_WITH_EDGE, ROOK_MAGICS, BISHOP_MAGICS};
 use crate::bitboards::{*};
-use crate::moves::{Color, Piece, Piece::*, Move, Square};
+use crate::moves::{Color, Piece, Piece::*, Move, Square, Direction};
 use crate::board::Board;
 
 /// Returns vector of rook moves
 pub fn get_rook_moves(board: &Board, color: Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
+    let mut rook_bb = board.pieces[color as usize][Rook as usize];
+
+    let enemies = board.get_pieces(color.opposite_color());
+    let allies = board.get_pieces(color);
+    let enemies_not_allies = enemies & !allies;
+    let all_pieces = board.get_all_pieces(); 
+
+    while rook_bb != 0 {
+        let rook_index = rook_bb.trailing_zeros() as u64;
+        let from = Square::try_from(rook_index).unwrap();
+        rook_bb = rook_bb.clear_bit(rook_index); 
+
+        let rook_magic = &ROOK_MAGICS[rook_index as usize]; 
+        
+        let blockers = rook_magic.direction_mask & all_pieces;
+        let index = blockers.wrapping_mul(rook_magic.magic_num) >> (64 - rook_magic.index_bits);
+        let mut attacks = rook_magic.attack_table[index as usize].unwrap();
+        attacks = attacks & enemies_not_allies; 
+        
+        while attacks != 0 {
+            let to_index = attacks.trailing_zeros() as u64;
+            let to = Square::try_from(to_index).unwrap();
+            attacks = attacks.clear_bit(to_index); 
+
+            let captured_piece = board.get_piece_at(to_index); 
+            moves.push(Move::new_normal(
+                from,
+                to,
+                Rook,
+                color,
+                captured_piece,
+            ))
+        }
+    }
 
     moves
 }
 
 pub fn get_bishop_moves(board: &Board, color: Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
+    let mut bishop_bb = board.pieces[color as usize][Bishop as usize];
 
+    let enemies = board.get_pieces(color.opposite_color());
+    let allies = board.get_pieces(color);
+    let enemies_not_allies = enemies & !allies;
+    let all_pieces = board.get_all_pieces(); 
+
+    while bishop_bb != 0 {
+        let bishop_index = bishop_bb.trailing_zeros() as u64;
+        let from = Square::try_from(bishop_index).unwrap();
+        bishop_bb = bishop_bb.clear_bit(bishop_index); 
+
+        let bishop_magic = &BISHOP_MAGICS[bishop_index as usize]; 
+        
+        let blockers = bishop_magic.direction_mask & all_pieces;
+        let index = blockers.wrapping_mul(bishop_magic.magic_num) >> (64 - bishop_magic.index_bits);
+        let mut attacks = bishop_magic.attack_table[index as usize].unwrap();
+        attacks = attacks & enemies_not_allies; 
+        
+        while attacks != 0 {
+            let to_index = attacks.trailing_zeros() as u64;
+            let to = Square::try_from(to_index).unwrap();
+            attacks = attacks.clear_bit(to_index); 
+            
+            let captured_piece = board.get_piece_at(to_index); 
+            moves.push(Move::new_normal(
+                from,
+                to,
+                Bishop,
+                color,
+                captured_piece,
+            ))
+        }
+    }
     moves
 }
 
@@ -86,14 +153,13 @@ pub fn get_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     let empty: Bitboard = !all_squares; 
 
     // Pushing pawns one square forward, deal with promotion later
-    // TODO: change so it deals with both colors without branching - just use functions from bitboards.rs
     let one_step = FORWARD_SHIFT[color as usize](pawn_bb) & empty; 
 
     // Pushing pawns two squares forward
     let two_step = FORWARD_SHIFT[color as usize](one_step) & empty & PAWN_DOUBLE_RANK[color as usize];
 
     // Extracting moves from one_step
-    let pawn_push_moves = extract_pawn_push_moves(one_step, OFFSET_SINGLE_PUSH[color as usize], color); // fix offset to be constants in bitboards
+    let pawn_push_moves = extract_pawn_push_moves(one_step, OFFSET_SINGLE_PUSH[color as usize], color);
     moves.extend(pawn_push_moves); 
 
     // Extracting moves from two_step
@@ -208,6 +274,7 @@ fn extract_pawn_promotions(bb: Bitboard, promote_piece: Option<Piece>, color: Co
     moves
 }
 
+/// Extracts moves where we promote and capture. 
 fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitboard; 64], promote_piece: Option<Piece>, 
     enemies_not_allies: Bitboard, color: Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new(); 
@@ -236,4 +303,15 @@ fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitbo
         } 
     }
     moves
+}
+
+/// Returns bitboard of rays in all directions given in directions_list originating from square.
+/// Doesnt include edge squares - used for magic index. 
+fn get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboard {
+    let mut directions_bb = 0u64;
+    for direction in directions_list {
+        directions_bb |= RAYS[square as usize][direction as usize]; 
+    }
+    directions_bb
+    
 }
