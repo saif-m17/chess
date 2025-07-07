@@ -7,10 +7,12 @@ use chess_core::moves::Square;
 
 fn main() {
     let mut rays = [[0u64; 8]; 64];
+    let mut rays_without_end = [[0u64; 8]; 64]; 
 
     for square in 0..64 {
         for dir in 0..8 {
             rays[square][dir] = compute_ray_include_edge(square as u8, dir as u8);
+            rays_without_end[square][dir] = compute_ray(square as u8, dir as u8); 
         }
     }
 

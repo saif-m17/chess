@@ -1,4 +1,3 @@
-use crate::bitboards::Bitboard;
 use crate::attacktables::AttackTables; 
 
 pub static ATTACK_TABLES: AttackTables = AttackTables {

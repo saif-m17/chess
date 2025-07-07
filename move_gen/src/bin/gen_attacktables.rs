@@ -64,7 +64,7 @@ fn write_attacks_to_file(attacks: AttackTables) {
     let mut file = File::create(path).unwrap(); 
 
     writeln!(file, "use crate::bitboards::Bitboard;").unwrap();
-    writeln!(file, "use crate::attacktables::AttackTables;");
+    writeln!(file, "use crate::attacktables::AttackTables;").unwrap();
     writeln!(file, "").unwrap();
     writeln!(file, "pub static ATTACK_TABLES: AttackTables = AttackTables {{").unwrap();
     

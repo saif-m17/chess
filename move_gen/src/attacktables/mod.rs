@@ -1,8 +1,6 @@
 use crate::bitboards::Bitboard;
-use crate::moves::Direction; 
 
 mod rays_table;
-use rand::seq::index;
 pub use rays_table::RAYS;
 
 mod rays_table_to_edge;

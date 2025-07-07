@@ -1,5 +1,4 @@
 use once_cell::sync::Lazy;
-use crate::bitboards::Bitboard;
 use crate::attacktables::Magic;
 
 pub static ROOK_MAGICS: Lazy<[Magic; 64]> = Lazy::new(|| [
