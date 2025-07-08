@@ -13,6 +13,9 @@ mod magic_tables;
 pub use magic_tables::BISHOP_MAGICS;
 pub use magic_tables::ROOK_MAGICS; 
 
+mod in_between_squares;
+pub use in_between_squares::IN_BETWEEN_SQUARES; 
+
 pub const BISHOP_INDEX_BITS: usize = 9;
 pub const ROOK_INDEX_BITS: usize = 12;
 

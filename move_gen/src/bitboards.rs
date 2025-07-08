@@ -43,37 +43,16 @@ pub trait BitboardExt {
 }
 
 impl BitboardExt for Bitboard {
-    fn clear_bit(self, index: u64) -> Self {
-        self & !(1u64 << index)
-    }
+    fn clear_bit(self, index: u64) -> Self { self & !(1u64 << index) }
+    fn set_bit(self, index: u64) -> Self { self | (1u64 << index) }
+    fn get_bit(self, index: u64) -> bool { (self >> index) & 1 == 1 }
 
-    fn set_bit(self, index: u64) -> Self {
-        self | (1u64 << index)
-    }
+    fn shift_north(self) -> Self { (self & !RANK_8) << 8 }
+    fn shift_south(self) -> Self { (self & !RANK_1) >> 8 }
+    fn shift_west(self) -> Self { (self & !FILE_H) >> 1 }
+    fn shift_east(self) -> Self { (self & !FILE_A) << 1 }
 
-    fn get_bit(self, index: u64) -> bool {
-        (self << index) & 1 == 1
-    }
-
-    fn shift_north(self) -> Self {
-        (self & !RANK_8) << 8 
-    }
-
-    fn shift_south(self) -> Self {
-        (self & !RANK_1) >> 8 
-    }
-
-    fn shift_west(self) -> Self {
-        (self & !FILE_H) >> 1
-    }
-
-    fn shift_east(self) -> Self {
-        (self & !FILE_A) << 1 
-    }
-
-    fn from_square(square: Square) -> Self {
-        1u64 << (square as u64)
-    }
+    fn from_square(square: Square) -> Self { 1u64 << (square as u64) }
 
     fn relevant_bits(self, square: Square, direction: Direction) -> usize {
         let ray = RAYS[square as usize][direction as usize];
@@ -109,7 +88,7 @@ impl BitboardExt for Bitboard {
         }
         board_str
 
-    }
+    }    
 }
 
 // Free functions for shifting pawns
