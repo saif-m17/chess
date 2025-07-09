@@ -1,7 +1,28 @@
-use crate::attacktables::{ATTACK_TABLES, RAYS, ROOK_MAGICS, BISHOP_MAGICS};
+use crate::attacktables::{ATTACK_TABLES, RAYS, ROOK_MAGICS, BISHOP_MAGICS, Magic};
 use crate::bitboards::{*};
 use crate::moves::{Color, Piece, Piece::*, Move, Square, Direction};
 use crate::board::Board;
+
+/// Returns vector of legal moves
+pub fn get_legal_moves(board: &Board, color: Color) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new(); 
+    let king_bb = board.pieces[color as usize][King as usize]; 
+    let king_index = king_bb.trailing_zeros() as u64; 
+    let king_square = Square::try_from(king_index).unwrap(); 
+
+    let (checkers, num_checkers) = get_attackers(board, color, king_square);
+
+    if num_checkers > 1 {
+        // Double check - only examine king moves. Need to filter by moves that get
+        // out of check now. 
+        let king_moves = get_king_moves(board, color); 
+    } else if num_checkers == 1 {
+        todo!() 
+    } else {
+        todo!()
+    }
+    moves
+}
 
 /// Returns vector of all pseudo-legal moves
 pub fn get_pseudo_legal_moves(board: &Board, color: Color) -> Vec<Move> {
@@ -388,4 +409,34 @@ fn _get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboa
     }
     directions_bb
     
+}
+
+/// Finds pinned pieces on the given board 
+fn find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
+    todo!(); 
+}
+
+/// Checks if king is in check (checkers - bitboard of checkers, boolean if in check)
+fn get_attackers(board: &Board, color: Color, square:Square) -> (Bitboard, u32) {
+    let enemy_color = color.opposite_color(); 
+    let mut attackers = 0u64; 
+    let enemies = board.get_pieces(enemy_color); 
+
+    attackers |= ATTACK_TABLES.pawn_attacks[color as usize][square as usize] & enemies;
+    attackers |= ATTACK_TABLES.knight_attacks[square as usize] & enemies;
+    attackers |= ATTACK_TABLES.king_attacks[square as usize] & enemies;
+    attackers |= get_sliding_piece_attacks(board, square, &ROOK_MAGICS) & enemies;
+    attackers |= get_sliding_piece_attacks(board, square, &BISHOP_MAGICS) & enemies;
+
+    (attackers, attackers.count_ones())
+}
+
+/// Returns bitboard of attacks from sliding piece at square, given the magic table to look at
+fn get_sliding_piece_attacks(board: &Board, square: Square, magic_table: &[Magic; 64]) -> Bitboard {
+    let magic = &magic_table[square as usize];
+    let all_pieces = board.get_all_pieces(); 
+    let blockers = magic.direction_mask & all_pieces;
+    let index = blockers.wrapping_mul(magic.magic_num) >> (64 - magic.index_bits);
+    let attacks = magic.attack_table[index as usize].unwrap();
+    attacks
 }
