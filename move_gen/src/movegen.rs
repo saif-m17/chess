@@ -416,7 +416,8 @@ fn find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
     todo!(); 
 }
 
-/// Checks if king is in check (checkers - bitboard of checkers, boolean if in check)
+/// Checks if square is attacked (attackers - bitboard of attackers, number of pieces that attack
+/// said square). 
 fn get_attackers(board: &Board, color: Color, square:Square) -> (Bitboard, u32) {
     let enemy_color = color.opposite_color(); 
     let mut attackers = 0u64; 
