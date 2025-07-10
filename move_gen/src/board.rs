@@ -1,9 +1,10 @@
 use crate::bitboards::{*}; 
-use crate::moves::{Color, Color::*, Piece, Piece::*, Square::*};
+use crate::moves::{Color, Color::*, Piece, Piece::*, Square::*, Move};
 
 pub struct Board {
     pub pieces: [[Bitboard; 6]; 2],
     pub piece_lookup: [Option<Piece>; 64],
+    pub past_moves: Vec<Move>,
 }
 
 impl Board {
@@ -38,7 +39,9 @@ impl Board {
             Some(Rook), Some(Knight), Some(Bishop), Some(Queen), Some(King), Some(Bishop), Some(Knight), Some(Rook),  
         ];
 
-        Board { pieces, piece_lookup }
+        let past_moves: Vec<Move> = Vec::new(); 
+
+        Board { pieces, piece_lookup, past_moves }
     }
 
     /// Gets pieces for color 

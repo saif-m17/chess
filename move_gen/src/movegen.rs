@@ -1,4 +1,4 @@
-use crate::attacktables::{ATTACK_TABLES, RAYS, ROOK_MAGICS, BISHOP_MAGICS, Magic};
+use crate::attacktables::{ATTACK_TABLES, RAYS, ROOK_MAGICS, BISHOP_MAGICS, Magic, IN_BETWEEN_SQUARES};
 use crate::bitboards::{*};
 use crate::moves::{Color, Piece, Piece::*, Move, Square, Direction};
 use crate::board::Board;
@@ -411,9 +411,27 @@ fn _get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboa
     
 }
 
-/// Finds pinned pieces on the given board 
-fn find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
-    todo!(); 
+/// Finds pinned pieces on the given board for a given color, assuming checking pieces
+/// located on the given bitboard. Will likely only call in the case of one checker
+/// since multiple checkers mean king must be moved. 
+fn find_pinned_pieces(board: &Board, color: Color, checkers: Bitboard) -> Bitboard {
+    let ally_pieces = board.get_pieces(color); 
+    let king_bb = board.pieces[color as usize][King as usize];
+    let king_index = king_bb.trailing_zeros() as usize;  
+
+    let mut pinned_pieces = 0u64;
+    let mut checking_pieces = checkers;
+
+    while checking_pieces != 0 {
+        let curr_checker = checking_pieces.trailing_zeros() as usize;
+        checking_pieces = checking_pieces.clear_bit(curr_checker as u64);
+
+        let squares_between = IN_BETWEEN_SQUARES[king_index][curr_checker];
+        pinned_pieces |= squares_between & ally_pieces; 
+    }
+
+    pinned_pieces
+
 }
 
 /// Checks if square is attacked (attackers - bitboard of attackers, number of pieces that attack
