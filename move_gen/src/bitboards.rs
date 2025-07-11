@@ -165,3 +165,12 @@ pub const BISHOP_DIRECTIONS: [Direction; 4] = [Direction::NorthEast, Direction::
 pub const QUEEN_DIRECTIONS: [Direction; 8] = [
     Direction::North, Direction::South, Direction::East, Direction::West,
     Direction::NorthEast, Direction::NorthWest, Direction::SouthEast, Direction::SouthWest]; 
+
+
+// Misc utility funtions
+
+/// Returns one of the Direction enums or None.
+fn direction_between_squares(square1: u8, square2: u8) -> Option<Direction>{
+    todo!();
+
+}

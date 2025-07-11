@@ -247,7 +247,7 @@ pub fn get_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     let all_squares: Bitboard = board.get_all_pieces(); 
     let empty: Bitboard = !all_squares; 
 
-    // Pushing pawns one square forward, deal with promotion later
+    // Pushing pawns one square forward
     let one_step = FORWARD_SHIFT[color as usize](pawn_bb) & empty; 
 
     // Pushing pawns two squares forward
@@ -313,7 +313,6 @@ fn extract_pawn_push_moves(bb: Bitboard, offset: i8, color:Color) -> Vec<Move> {
 }
 
 /// Extracts the pawn attack moves from without considering attacks that lead to promotion (from attack tables)
-/// no en passent yet
 fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboard; 64], 
     enemies_not_allies: Bitboard, color: Color) -> Vec<Move> {
 
@@ -415,6 +414,9 @@ fn _get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboa
 /// located on the given bitboard. Will likely only call in the case of one checker
 /// since multiple checkers mean king must be moved. 
 fn find_pinned_pieces(board: &Board, color: Color, checkers: Bitboard) -> Bitboard {
+
+    // Incorrect for now - shouldnt be using checkers/pieces that attack the king, but
+    // pieces whose rays go in that direction.
     let ally_pieces = board.get_pieces(color); 
     let king_bb = board.pieces[color as usize][King as usize];
     let king_index = king_bb.trailing_zeros() as usize;  
@@ -458,4 +460,9 @@ fn get_sliding_piece_attacks(board: &Board, square: Square, magic_table: &[Magic
     let index = blockers.wrapping_mul(magic.magic_num) >> (64 - magic.index_bits);
     let attacks = magic.attack_table[index as usize].unwrap();
     attacks
+}
+
+/// Returns bitboard of enemy sliding pieces whose squares go in the direction of the king 
+fn get_sliding_pieces_pointed_at_king(board: &Board, color: Color) {
+    todo!(); 
 }
