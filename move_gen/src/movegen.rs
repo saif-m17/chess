@@ -13,9 +13,15 @@ pub fn get_legal_moves(board: &Board, color: Color) -> Vec<Move> {
     let (checkers, num_checkers) = get_attackers(board, color, king_square);
 
     if num_checkers > 1 {
-        // Double check - only examine king moves. Need to filter by moves that get
-        // out of check now. 
-        let king_moves = get_king_moves(board, color); 
+        let potential_king_moves = get_king_moves(board, color);
+        let mut king_moves: Vec<Move> = Vec::new();
+        for candidate_move in potential_king_moves {
+            let (_candidate_square_attackers, num_attackers) = get_attackers(board, color, candidate_move.to); 
+            if num_attackers == 0 {
+                king_moves.push(candidate_move); 
+            }
+        }
+        moves.push(king_moves);  
     } else if num_checkers == 1 {
         todo!() 
     } else {
