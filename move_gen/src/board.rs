@@ -1,10 +1,13 @@
 use crate::bitboards::{*}; 
-use crate::moves::{Color, Color::*, Piece, Piece::*, Square::*, Move};
+use crate::moves::{Color::{self, *}, Move, MoveType, Piece::{self, *}, Square::{self, *}};
 
+#[derive(Clone)]
 pub struct Board {
     pub pieces: [[Bitboard; 6]; 2],
     pub piece_lookup: [Option<Piece>; 64],
     pub past_moves: Vec<Move>,
+    pub en_passant_square: Option<Square>,
+    pub castling_rights: [[bool; 2]; 2],
 }
 
 impl Board {
@@ -41,7 +44,9 @@ impl Board {
 
         let past_moves: Vec<Move> = Vec::new(); 
 
-        Board { pieces, piece_lookup, past_moves }
+        let castling_rights = [[true, true], [true, true]]; 
+
+        Board { pieces, piece_lookup, past_moves, en_passant_square:None, castling_rights }
     }
 
     /// Gets pieces for color 
@@ -64,6 +69,88 @@ impl Board {
         self.pieces[color as usize][Rook as usize] |
         self.pieces[color as usize][Bishop as usize] |
         self.pieces[color as usize][Queen as usize]
+    }
+
+    /// Makes given move by updating current board
+    pub fn make_move_in_place(&mut self, mve: Move) {
+        match mve.move_type {
+            MoveType::Normal => self.make_normal_move(mve),
+            MoveType::Castle { kingside } => self.make_castle_move(mve, kingside),
+            MoveType::EnPassant => self.make_en_passant_move(mve),
+            MoveType::DoublePawnPush => self.make_double_push_move(mve),
+            MoveType::Promotion { piece } => self.make_promotion_move(mve, piece),
+        }
+    }
+
+    pub fn make_move(&self, mve: Move) -> Board {
+        let new_board = self.clone();
+
+        todo!();
+
+    }
+
+    fn make_normal_move(&mut self, mve: Move) {
+        self.pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u64); 
+        self.pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u64); 
+
+        if let Some(captured_piece) = mve.captured {
+            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
+        }
+
+        if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && self.castling_rights[0] {
+            self.castling_rights[mve.color as usize][0] = false; 
+        } else if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][1] && self.castling_rights[1] {
+            self.castling_rights[mve.color as usize][1] = false; 
+        }
+
+        self.piece_lookup[mve.from as usize] = None;
+        self.piece_lookup[mve.to as usize] = Some(mve.piece); 
+
+        self.past_moves.push(mve); 
+    }
+
+    fn make_castle_move(&mut self, mve: Move, kingside: bool) {
+        self.pieces[mve.color as usize][King as usize].clear_bit(mve.from as u64);
+        self.pieces[mve.color as usize][King as usize].set_bit(mve.to as u64);
+
+        let rook_to_index = ROOK_CASTLING_DIRECTION[kingside as usize](Bitboard::from_square(mve.to)).trailing_zeros() as u64; 
+        let rook_from_index = ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][kingside as usize] as u64;
+
+        self.pieces[mve.color as usize][Rook as usize].clear_bit(rook_from_index);
+        self.pieces[mve.color as usize][Rook as usize].set_bit(rook_to_index); 
+
+        self.piece_lookup[mve.from as usize] = None;
+        self.piece_lookup[mve.to as usize] = Some(King);
+
+        self.piece_lookup[rook_from_index as usize] = None;
+        self.piece_lookup[rook_to_index as usize] = Some(Rook);
+
+        self.castling_rights = [[false, false], [false, false]]; 
+
+        self.past_moves.push(mve); 
+    }
+
+    fn make_double_push_move(&mut self, mve: Move) {
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64);
+
+        self.piece_lookup[mve.from as usize] = None;
+        self.piece_lookup[mve.to as usize] = Some(Pawn);
+
+        let to_index = mve.to as u8;
+        let offset = OFFSET_SINGLE_PUSH[mve.color as usize] as i16;
+        let en_passant_index =  (to_index as i16 - offset) as u64;
+
+        self.en_passant_square = Some(Square::try_from(en_passant_index).unwrap()); 
+
+    }
+
+    fn make_en_passant_move(&self, mve: Move) {
+        todo!()
+    }
+
+    fn make_promotion_move(&self, mve: Move, promotion: Piece) {
+        todo!()
     }
 
 }
