@@ -8,7 +8,8 @@ pub fn get_legal_moves(board: &Board, color: Color) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new(); 
     let king_bb = board.pieces[color as usize][King as usize]; 
     let king_index = king_bb.trailing_zeros() as u64; 
-    let king_square = Square::try_from(king_index).unwrap(); 
+    let king_square = Square::try_from(king_index).unwrap();
+    let pinned_pieces = find_pinned_pieces(board, color);  
 
     let (checkers, num_checkers) = get_attackers(board, color, king_square);
 
@@ -21,7 +22,7 @@ pub fn get_legal_moves(board: &Board, color: Color) -> Vec<Move> {
                 king_moves.push(candidate_move); 
             }
         }
-        moves.push(king_moves);  
+        moves.extend(king_moves);  
     } else if num_checkers == 1 {
         todo!() 
     } else {
@@ -66,7 +67,7 @@ pub fn get_queen_moves(board: &Board, color: Color) -> Vec<Move> {
 
     while rook_attacks != 0 {
         let to_index = rook_attacks.trailing_zeros() as u64;
-        rook_attacks = rook_attacks.clear_bit(to_index);
+        rook_attacks.clear_bit(to_index);
         let to = Square::try_from(to_index).unwrap();
 
         let captured_piece = board.get_piece_at(to_index);
@@ -88,7 +89,7 @@ pub fn get_queen_moves(board: &Board, color: Color) -> Vec<Move> {
 
     while bishop_attacks != 0 {
         let to_index = bishop_attacks.trailing_zeros() as u64;
-        bishop_attacks = bishop_attacks.clear_bit(to_index);
+        bishop_attacks.clear_bit(to_index);
         let to = Square::try_from(to_index).unwrap();
 
         let captured_piece = board.get_piece_at(to_index);
@@ -117,7 +118,7 @@ pub fn get_rook_moves(board: &Board, color: Color) -> Vec<Move> {
     while rook_bb != 0 {
         let rook_index = rook_bb.trailing_zeros() as u64;
         let from = Square::try_from(rook_index).unwrap();
-        rook_bb = rook_bb.clear_bit(rook_index); 
+        rook_bb.clear_bit(rook_index); 
 
         let rook_magic = &ROOK_MAGICS[rook_index as usize]; 
         
@@ -129,7 +130,7 @@ pub fn get_rook_moves(board: &Board, color: Color) -> Vec<Move> {
         while attacks != 0 {
             let to_index = attacks.trailing_zeros() as u64;
             let to = Square::try_from(to_index).unwrap();
-            attacks = attacks.clear_bit(to_index); 
+            attacks.clear_bit(to_index); 
 
             let captured_piece = board.get_piece_at(to_index); 
             moves.push(Move::new_normal(
@@ -157,7 +158,7 @@ pub fn get_bishop_moves(board: &Board, color: Color) -> Vec<Move> {
     while bishop_bb != 0 {
         let bishop_index = bishop_bb.trailing_zeros() as u64;
         let from = Square::try_from(bishop_index).unwrap();
-        bishop_bb = bishop_bb.clear_bit(bishop_index); 
+        bishop_bb.clear_bit(bishop_index); 
 
         let bishop_magic = &BISHOP_MAGICS[bishop_index as usize]; 
         
@@ -169,7 +170,7 @@ pub fn get_bishop_moves(board: &Board, color: Color) -> Vec<Move> {
         while attacks != 0 {
             let to_index = attacks.trailing_zeros() as u64;
             let to = Square::try_from(to_index).unwrap();
-            attacks = attacks.clear_bit(to_index); 
+            attacks.clear_bit(to_index); 
             
             let captured_piece = board.get_piece_at(to_index); 
             moves.push(Move::new_normal(
@@ -200,7 +201,7 @@ pub fn get_king_moves(board: &Board, color: Color) -> Vec<Move>{
 
     while attacks != 0 {
         let to_index = attacks.trailing_zeros() as u64;
-        attacks = attacks.clear_bit(to_index);
+        attacks.clear_bit(to_index);
         let to = Square::try_from(to_index).unwrap();
         let captured_piece = board.get_piece_at(to_index); 
         moves.push(Move::new_normal(
@@ -225,13 +226,13 @@ pub fn get_knight_moves(board: &Board, color: Color) -> Vec<Move> {
 
     while knight_bb != 0 {
         let knight = knight_bb.trailing_zeros() as u64;
-        knight_bb = knight_bb.clear_bit(knight); 
+        knight_bb.clear_bit(knight); 
         let from = Square::try_from(knight).unwrap();
         let mut attacks = ATTACK_TABLES.knight_attacks[knight as usize] & enemies_not_allies; 
 
         while attacks != 0 {
             let to_index = attacks.trailing_zeros() as u64;
-            attacks = attacks.clear_bit(to_index);
+            attacks.clear_bit(to_index);
             let to = Square::try_from(to_index).unwrap();
             let captured_piece = board.get_piece_at(to_index); 
             moves.push(Move::new_normal(
@@ -300,7 +301,7 @@ fn extract_pawn_push_moves(bb: Bitboard, offset: i8, color:Color) -> Vec<Move> {
 
     while to_bb != 0 {
         let to_index = to_bb.trailing_zeros() as u64;
-        to_bb = to_bb.clear_bit(to_index);
+        to_bb.clear_bit(to_index);
         let from_index = (to_index as i64 - offset as i64) as u64; 
 
         // Converting to piece enum
@@ -327,14 +328,14 @@ fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboar
 
     while from_bb != 0 {
         let from_index = from_bb.trailing_zeros() as u64;
-        from_bb = from_bb.clear_bit(from_index);
+        from_bb.clear_bit(from_index);
 
         let from = Square::try_from(from_index).unwrap(); 
 
         let mut to_bb = attacks[from_index as usize] & enemies_not_allies;
         while to_bb != 0 {
             let to_index = to_bb.trailing_zeros() as u64;
-            to_bb = to_bb.clear_bit(to_index);
+            to_bb.clear_bit(to_index);
             let to = Square::try_from(to_index).unwrap();
 
             let captured_piece = board.get_piece_at(to_index); 
@@ -357,7 +358,7 @@ fn extract_pawn_promotions(bb: Bitboard, promote_piece: Option<Piece>, color: Co
 
     while to_bb != 0 {
         let to_index = to_bb.trailing_zeros() as u64;
-        to_bb = to_bb.clear_bit(to_index);
+        to_bb.clear_bit(to_index);
         let from_index = to_index - 8;
 
         let to = Square::try_from(to_index).unwrap();
@@ -382,14 +383,14 @@ fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitbo
 
     while from_bb != 0 {
         let from_index = from_bb.trailing_zeros() as u64;
-        from_bb = from_bb.clear_bit(from_index);
+        from_bb.clear_bit(from_index);
 
         let from = Square::try_from(from_index).unwrap(); 
 
         let mut to_bb = attacks[from_index as usize] & enemies_not_allies;
         while to_bb != 0 {
             let to_index = to_bb.trailing_zeros() as u64;
-            to_bb = to_bb.clear_bit(to_index);
+            to_bb.clear_bit(to_index);
             let to = Square::try_from(to_index).unwrap();
 
             let captured_piece = board.get_piece_at(to_index); 
@@ -417,8 +418,7 @@ fn _get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboa
 }
 
 /// Finds pinned pieces on the given board for a given color, assuming checking pieces
-/// located on the given bitboard. Will likely only call in the case of one checker
-/// since multiple checkers mean king must be moved. 
+/// located on the given bitboard.
 fn find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
     let all_pieces = board.get_all_pieces(); 
     let ally_pieces = board.get_pieces(color); 
@@ -444,7 +444,7 @@ fn find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
 
     while enemy_bishops != 0 {
         let bishop_index = enemy_bishops.trailing_zeros() as usize;
-        enemy_bishops = enemy_bishops.clear_bit(bishop_index as u64);
+        enemy_bishops.clear_bit(bishop_index as u64);
 
         let squares_between_bishop = IN_BETWEEN_SQUARES[king_index][bishop_index];
         let pieces_between_bishop = squares_between_bishop & all_pieces; 
@@ -460,7 +460,7 @@ fn find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
 
     while enemy_rooks != 0 {
         let rook_index = enemy_rooks.trailing_zeros() as usize;
-        enemy_rooks = enemy_rooks.clear_bit(rook_index as u64);
+        enemy_rooks.clear_bit(rook_index as u64);
 
         let squares_between_rook = IN_BETWEEN_SQUARES[king_index][rook_index];
         let pieces_between_rook = squares_between_rook & all_pieces; 
@@ -502,5 +502,13 @@ fn get_sliding_piece_attacks(board: &Board, square: Square, magic_table: &[Magic
 
 /// Returns bitboard of enemy sliding pieces whose squares go in the direction of the king 
 fn get_sliding_pieces_pointed_at_king(board: &Board, color: Color) {
+    todo!(); 
+}
+
+fn moves_given_checker(board: &Board, color: Color, checkers: Bitboard, pinned_pieces: Bitboard) {
+    todo!(); 
+}
+
+fn moves_no_check(board: &Board, color: Color, pinned_pieces: Bitboard) {
     todo!(); 
 }

@@ -29,13 +29,13 @@ pub const FULL: u64 = 0b11111111_11111111_11111111_11111111_11111111_11111111_11
 pub type Bitboard = u64; 
 
 pub trait BitboardExt {
-    fn clear_bit(self, index: u64) -> Self;
-    fn set_bit(self, index: u64) -> Self;
+    fn clear_bit(&mut self, index: u64);
+    fn set_bit(&mut self, index: u64);
     fn get_bit(self, index: u64) -> bool;
-    fn shift_north(self) -> Self;
-    fn shift_south(self) -> Self;
-    fn shift_east(self) -> Self;
-    fn shift_west(self) -> Self;
+    fn shift_north(&mut self);
+    fn shift_south(&mut self);
+    fn shift_east(&mut self);
+    fn shift_west(&mut self);
     fn from_square(square: Square) -> Self; 
     fn relevant_bits(self, square: Square, direction: Direction) -> usize;
     fn display(self); 
@@ -43,14 +43,14 @@ pub trait BitboardExt {
 }
 
 impl BitboardExt for Bitboard {
-    fn clear_bit(self, index: u64) -> Self { self & !(1u64 << index) }
-    fn set_bit(self, index: u64) -> Self { self | (1u64 << index) }
+    fn clear_bit(&mut self, index: u64) { *self &= !(1u64 << index);  }
+    fn set_bit(&mut self, index: u64) { *self |= 1u64 << index; }
     fn get_bit(self, index: u64) -> bool { (self >> index) & 1 == 1 }
 
-    fn shift_north(self) -> Self { (self & !RANK_8) << 8 }
-    fn shift_south(self) -> Self { (self & !RANK_1) >> 8 }
-    fn shift_west(self) -> Self { (self & !FILE_H) >> 1 }
-    fn shift_east(self) -> Self { (self & !FILE_A) << 1 }
+    fn shift_north(&mut self) { *self = (*self & !RANK_8) << 8 }
+    fn shift_south(&mut self)  { *self = (*self & !RANK_1) >> 8 }
+    fn shift_west(&mut self) { *self = (*self & !FILE_H) >> 1 }
+    fn shift_east(&mut self) { *self = (*self & !FILE_A) << 1 }
 
     fn from_square(square: Square) -> Self { 1u64 << (square as u64) }
 
@@ -166,6 +166,8 @@ pub const QUEEN_DIRECTIONS: [Direction; 8] = [
     Direction::North, Direction::South, Direction::East, Direction::West,
     Direction::NorthEast, Direction::NorthWest, Direction::SouthEast, Direction::SouthWest]; 
 
+// Castling related constant functions
+pub const ROOK_CASTLING_DIRECTION: [fn(Bitboard) -> Bitboard; 2] = [shift_east, shift_west]; // Queenside, Kingside
 
 // Misc utility funtions
 
