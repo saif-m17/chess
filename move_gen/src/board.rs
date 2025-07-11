@@ -54,8 +54,16 @@ impl Board {
         self.get_pieces(Black) | self.get_pieces(White)
     }
 
-    // Try to make this branchless at some point 
+    /// Returns piece at a given index if it exists, else None
     pub fn get_piece_at(&self, index: u64) -> Option<Piece> {
         self.piece_lookup[index as usize]
     }
+
+    /// Returns bitboard of all sliding pieces for color.
+    pub fn get_sliding_pieces(&self, color: Color) -> Bitboard {
+        self.pieces[color as usize][Rook as usize] |
+        self.pieces[color as usize][Bishop as usize] |
+        self.pieces[color as usize][Queen as usize]
+    }
+
 }

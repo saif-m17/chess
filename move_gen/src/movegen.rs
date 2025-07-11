@@ -413,23 +413,55 @@ fn _get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboa
 /// Finds pinned pieces on the given board for a given color, assuming checking pieces
 /// located on the given bitboard. Will likely only call in the case of one checker
 /// since multiple checkers mean king must be moved. 
-fn find_pinned_pieces(board: &Board, color: Color, checkers: Bitboard) -> Bitboard {
-
-    // Incorrect for now - shouldnt be using checkers/pieces that attack the king, but
-    // pieces whose rays go in that direction.
+fn find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
+    let all_pieces = board.get_all_pieces(); 
     let ally_pieces = board.get_pieces(color); 
     let king_bb = board.pieces[color as usize][King as usize];
     let king_index = king_bb.trailing_zeros() as usize;  
 
     let mut pinned_pieces = 0u64;
-    let mut checking_pieces = checkers;
 
-    while checking_pieces != 0 {
-        let curr_checker = checking_pieces.trailing_zeros() as usize;
-        checking_pieces = checking_pieces.clear_bit(curr_checker as u64);
+    // Pieces pinned by the queen
+    let enemy_queen = board.pieces[color.opposite_color() as usize][Queen as usize];
+    let enemy_queen_index = enemy_queen.trailing_zeros() as usize;
 
-        let squares_between = IN_BETWEEN_SQUARES[king_index][curr_checker];
-        pinned_pieces |= squares_between & ally_pieces; 
+    let squares_between_queen = IN_BETWEEN_SQUARES[king_index][enemy_queen_index]; 
+    let pieces_between_queen = squares_between_queen & all_pieces;
+
+    if pieces_between_queen.count_ones() == 1 {
+        let ally_pieces_between_queen = squares_between_queen & ally_pieces; 
+        pinned_pieces |= ally_pieces_between_queen; 
+    }
+
+    // Pieces pinned by bishops 
+    let mut enemy_bishops = board.pieces[color.opposite_color() as usize][Bishop as usize];
+
+    while enemy_bishops != 0 {
+        let bishop_index = enemy_bishops.trailing_zeros() as usize;
+        enemy_bishops = enemy_bishops.clear_bit(bishop_index as u64);
+
+        let squares_between_bishop = IN_BETWEEN_SQUARES[king_index][bishop_index];
+        let pieces_between_bishop = squares_between_bishop & all_pieces; 
+        if pieces_between_bishop.count_ones() == 1 {
+            let ally_pieces_between_bishop = squares_between_bishop & ally_pieces;
+            pinned_pieces |= ally_pieces_between_bishop; 
+        }
+    }
+
+    // Pieces pinned by rooks 
+    let mut enemy_rooks = board.pieces[color.opposite_color() as usize][Rook as usize]; 
+
+
+    while enemy_rooks != 0 {
+        let rook_index = enemy_rooks.trailing_zeros() as usize;
+        enemy_rooks = enemy_rooks.clear_bit(rook_index as u64);
+
+        let squares_between_rook = IN_BETWEEN_SQUARES[king_index][rook_index];
+        let pieces_between_rook = squares_between_rook & all_pieces; 
+        if pieces_between_rook.count_ones() == 1 {
+            let ally_pieces_between_rook = squares_between_rook & ally_pieces;
+            pinned_pieces |= ally_pieces_between_rook; 
+        }
     }
 
     pinned_pieces
