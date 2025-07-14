@@ -152,11 +152,25 @@ impl Board {
         self.piece_lookup[mve.from as usize] = None;
         self.piece_lookup[mve.to as usize] = Some(Pawn); 
 
-        todo!();
+        let to_index = mve.to as u8;
+        let offset = OFFSET_SINGLE_PUSH[mve.color as usize] as i16;
+        let captured_piece_index = (to_index as i16 - offset) as u64;
+
+        self.pieces[mve.color.opposite_color() as usize][Pawn as usize].clear_bit(captured_piece_index);
+        self.piece_lookup[captured_piece_index as usize] = None;
     }
 
-    fn make_promotion_move(&self, mve: Move, promotion: Piece) {
-        todo!()
+    fn make_promotion_move(&mut self, mve: Move, promotion: Piece) {
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
+        self.pieces[mve.color as usize][promotion as usize].set_bit(mve.to as u64); 
+
+        if let Some(captured_piece) = mve.captured {
+            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
+        }
+
+        self.piece_lookup[mve.from as usize] = None;
+        self.piece_lookup[mve.to as usize] = Some(Pawn); 
+        
     }
 
 }
