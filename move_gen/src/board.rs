@@ -97,9 +97,9 @@ impl Board {
             self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
         }
 
-        if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && self.castling_rights[0] {
+        if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && self.castling_rights[mve.color as usize][0] {
             self.castling_rights[mve.color as usize][0] = false; 
-        } else if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][1] && self.castling_rights[1] {
+        } else if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][1] && self.castling_rights[mve.color as usize][1] {
             self.castling_rights[mve.color as usize][1] = false; 
         }
 
@@ -145,8 +145,14 @@ impl Board {
 
     }
 
-    fn make_en_passant_move(&self, mve: Move) {
-        todo!()
+    fn make_en_passant_move(&mut self, mve: Move) {
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64); 
+
+        self.piece_lookup[mve.from as usize] = None;
+        self.piece_lookup[mve.to as usize] = Some(Pawn); 
+
+        todo!();
     }
 
     fn make_promotion_move(&self, mve: Move, promotion: Piece) {
