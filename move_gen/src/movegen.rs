@@ -56,13 +56,9 @@ pub fn get_queen_moves(board: &Board, color: Color) -> Vec<Move> {
     let enemies = board.get_pieces(color.opposite_color());
     let allies = board.get_pieces(color);
     let enemies_not_allies = enemies & !allies;
-    let all_pieces = board.get_all_pieces(); 
 
     // Getting moves in rook directions
-    let rook_magic = &ROOK_MAGICS[queen_index as usize];
-    let rook_blockers = rook_magic.direction_mask & all_pieces;
-    let index = rook_blockers.wrapping_mul(rook_magic.magic_num) >> (64 - rook_magic.index_bits);
-    let mut rook_attacks = rook_magic.attack_table[index as usize].unwrap();
+    let mut rook_attacks = get_sliding_piece_attacks(board, from, &ROOK_MAGICS); 
     rook_attacks = rook_attacks & enemies_not_allies;
 
     while rook_attacks != 0 {
@@ -81,10 +77,7 @@ pub fn get_queen_moves(board: &Board, color: Color) -> Vec<Move> {
     }
 
     // Getting moves in bishop directions
-    let bishop_magic = &BISHOP_MAGICS[queen_index as usize];
-    let bishop_blockers = bishop_magic.direction_mask & all_pieces;
-    let index = bishop_blockers.wrapping_mul(bishop_magic.magic_num) >> (64 - bishop_magic.index_bits);
-    let mut bishop_attacks = bishop_magic.attack_table[index as usize].unwrap();
+    let mut bishop_attacks = get_sliding_piece_attacks(board, from, &BISHOP_MAGICS); 
     bishop_attacks = bishop_attacks & enemies_not_allies;
 
     while bishop_attacks != 0 {
@@ -113,18 +106,13 @@ pub fn get_rook_moves(board: &Board, color: Color) -> Vec<Move> {
     let enemies = board.get_pieces(color.opposite_color());
     let allies = board.get_pieces(color);
     let enemies_not_allies = enemies & !allies;
-    let all_pieces = board.get_all_pieces(); 
 
     while rook_bb != 0 {
         let rook_index = rook_bb.trailing_zeros() as u64;
         let from = Square::try_from(rook_index).unwrap();
         rook_bb.clear_bit(rook_index); 
 
-        let rook_magic = &ROOK_MAGICS[rook_index as usize]; 
-        
-        let blockers = rook_magic.direction_mask & all_pieces;
-        let index = blockers.wrapping_mul(rook_magic.magic_num) >> (64 - rook_magic.index_bits);
-        let mut attacks = rook_magic.attack_table[index as usize].unwrap();
+        let mut attacks = get_sliding_piece_attacks(board, from, &ROOK_MAGICS); 
         attacks = attacks & enemies_not_allies; 
         
         while attacks != 0 {
@@ -153,18 +141,13 @@ pub fn get_bishop_moves(board: &Board, color: Color) -> Vec<Move> {
     let enemies = board.get_pieces(color.opposite_color());
     let allies = board.get_pieces(color);
     let enemies_not_allies = enemies & !allies;
-    let all_pieces = board.get_all_pieces(); 
 
     while bishop_bb != 0 {
         let bishop_index = bishop_bb.trailing_zeros() as u64;
         let from = Square::try_from(bishop_index).unwrap();
         bishop_bb.clear_bit(bishop_index); 
 
-        let bishop_magic = &BISHOP_MAGICS[bishop_index as usize]; 
-        
-        let blockers = bishop_magic.direction_mask & all_pieces;
-        let index = blockers.wrapping_mul(bishop_magic.magic_num) >> (64 - bishop_magic.index_bits);
-        let mut attacks = bishop_magic.attack_table[index as usize].unwrap();
+        let mut attacks = get_sliding_piece_attacks(board, from, &BISHOP_MAGICS); 
         attacks = attacks & enemies_not_allies; 
         
         while attacks != 0 {
@@ -506,7 +489,7 @@ fn get_sliding_pieces_pointed_at_king(board: &Board, color: Color) {
 }
 
 fn moves_given_checker(board: &Board, color: Color, checkers: Bitboard, pinned_pieces: Bitboard) {
-    todo!(); 
+     
 }
 
 fn moves_no_check(board: &Board, color: Color, pinned_pieces: Bitboard) {
