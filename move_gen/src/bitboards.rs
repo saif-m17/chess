@@ -172,8 +172,3 @@ pub const ROOK_CASTLING_INITIAL_SQUARE: [[Square; 2]; 2] = [[Square::A1, Square:
 
 // Misc utility funtions
 
-/// Returns one of the Direction enums or None.
-fn direction_between_squares(square1: u8, square2: u8) -> Option<Direction>{
-    todo!();
-
-}

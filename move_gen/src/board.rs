@@ -82,13 +82,6 @@ impl Board {
         }
     }
 
-    pub fn make_move(&self, mve: Move) -> Board {
-        let new_board = self.clone();
-
-        todo!();
-
-    }
-
     fn make_normal_move(&mut self, mve: Move) {
         self.pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u64); 
         self.pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u64); 
@@ -170,7 +163,7 @@ impl Board {
 
         self.piece_lookup[mve.from as usize] = None;
         self.piece_lookup[mve.to as usize] = Some(Pawn); 
-        
+
     }
 
 }
