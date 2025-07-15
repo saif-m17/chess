@@ -3,13 +3,20 @@ use crate::bitboards::{*};
 use crate::moves::{Color, Piece, Piece::*, Move, Square, Direction};
 use crate::board::Board;
 
-/// Returns a boolean check if the move is legal
-pub fn is_legal_move(board: &Board, color: Color, mve: Move) -> bool {
+/// Returns a boolean check if the move puts the king in check.
+pub fn moves_into_check(board: &Board, color: Color, mve: &Move) -> bool {
     let new_board_pieces = board.make_shallow_move(mve);
     let king_index = new_board_pieces[color as usize][King as usize].trailing_zeros() as u64; 
     let king_square = Square::try_from(king_index).unwrap();
     is_attacked(new_board_pieces, king_square, color)
     
+}
+
+/// Returns a boolean indicating whether the move is legal 
+pub fn is_move_legal(board: &Board, color: Color, mve: &Move) -> bool {
+    let into_check = moves_into_check(board, color, mve);
+    let possible_moves = get_check_aware_pseudo_legal_moves(board, color);
+    possible_moves.contains(mve) && !into_check 
 }
 
 /// Returns vector of legal moves
@@ -59,6 +66,7 @@ pub fn get_pseudo_legal_moves(board: &Board, color: Color) -> Vec<Move> {
     moves.extend(get_pseudo_rook_moves(board, color, !0u64));
     moves.extend(get_pseudo_queen_moves(board, color, !0u64));
     moves.extend(get_pseudo_king_moves(board, color));
+    moves.extend(get_castling_moves(board, color)); 
 
     moves
 }
@@ -153,9 +161,33 @@ pub fn get_pseudo_king_moves(board: &Board, color: Color) -> Vec<Move>{
 
     moves.extend(extract_moves(board, color, attacks, from, King));
 
-    // TODO - castling
+    moves
+}
+
+/// Returns castling moves for color (assumes we are not in check).
+pub fn get_castling_moves(board: &Board, color: Color) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+    let king_init = KING_INITIAL_SQUARE[color as usize];
+    let queenside_rook_init = ROOK_CASTLING_INITIAL_SQUARE[color as usize][0];
+    let kingside_rook_init = ROOK_CASTLING_INITIAL_SQUARE[color as usize][1];
+
+    let king_bb = board.pieces[color as usize][King as usize];
+    let rook_bb = board.pieces[color as usize][Rook as usize];
+
+    if !king_bb.get_bit(king_init as u64) {
+        return moves; 
+    }
+
+    if rook_bb.get_bit(queenside_rook_init as u64) && board.can_castle_queenside(color) {
+        moves.push(Move::new_castle(color, false)); 
+    }
+
+    if rook_bb.get_bit(kingside_rook_init as u64) && board.can_castle_kingside(color) {
+        moves.push(Move::new_castle(color, true)); 
+    }
 
     moves
+
 }
 
 /// Returns vector of pseudo-legal knight moves
@@ -262,6 +294,12 @@ fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboar
     enemies_not_allies: Bitboard, color: Color, valid_destinations: Bitboard) -> Vec<Move> {
 
     let mut moves: Vec<Move> = Vec::new();
+    let attack_targets = enemies_not_allies & valid_destinations;
+
+    if attack_targets == 0 {
+        return moves;
+    }
+
     let mut from_bb = pawnbb;
 
     while from_bb != 0 {
@@ -270,7 +308,7 @@ fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboar
 
         let from = Square::try_from(from_index).unwrap(); 
 
-        let mut to_bb = attacks[from_index as usize] & enemies_not_allies & valid_destinations;
+        let mut to_bb = attacks[from_index as usize] & attack_targets;
         while to_bb != 0 {
             let to_index = to_bb.trailing_zeros() as u64;
             to_bb.clear_bit(to_index);
@@ -475,7 +513,7 @@ fn get_all_pieces_from_bbs(pieces: [[Bitboard; 6]; 2]) -> Bitboard {
 }
 
 /// Returns bitboard of attacks from sliding piece at square, given the magic table to look at
-fn get_sliding_piece_attacks(all_pieces: Bitboard , square: Square, magic_table: &[Magic; 64]) -> Bitboard {
+fn get_sliding_piece_attacks(all_pieces: Bitboard, square: Square, magic_table: &[Magic; 64]) -> Bitboard {
     let magic = &magic_table[square as usize];
     let blockers = magic.direction_mask & all_pieces;
     let index = blockers.wrapping_mul(magic.magic_num) >> (64 - magic.index_bits);

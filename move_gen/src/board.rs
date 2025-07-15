@@ -24,12 +24,12 @@ impl Board {
         pieces[White as usize][Queen as usize] = D1.to_bitboard();
 
         // Black Pieces
-        pieces[Black as usize][Pawn as usize] = RANK_2;
-        pieces[Black as usize][Knight as usize] = B1.to_bitboard() | G1.to_bitboard();
-        pieces[Black as usize][Bishop as usize] = C1.to_bitboard() | F1.to_bitboard(); 
-        pieces[Black as usize][Rook as usize] = A1.to_bitboard() | H1.to_bitboard();
-        pieces[Black as usize][King as usize] = E1.to_bitboard();
-        pieces[Black as usize][Queen as usize] = D1.to_bitboard();
+        pieces[Black as usize][Pawn as usize] = RANK_7;
+        pieces[Black as usize][Knight as usize] = B8.to_bitboard() | G8.to_bitboard();
+        pieces[Black as usize][Bishop as usize] = C8.to_bitboard() | F8.to_bitboard(); 
+        pieces[Black as usize][Rook as usize] = A8.to_bitboard() | H8.to_bitboard();
+        pieces[Black as usize][King as usize] = E8.to_bitboard();
+        pieces[Black as usize][Queen as usize] = D8.to_bitboard();
 
         let piece_lookup: [Option<Piece>; 64] = [
             Some(Rook), Some(Knight), Some(Bishop), Some(Queen), Some(King), Some(Bishop), Some(Knight), Some(Rook),  
@@ -98,6 +98,8 @@ impl Board {
             self.castling_rights[mve.color as usize][0] = false; 
         } else if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][1] && self.castling_rights[mve.color as usize][1] {
             self.castling_rights[mve.color as usize][1] = false; 
+        } else if mve.piece == King && self.castling_rights.iter().flatten().any(|&b| b) {
+            self.castling_rights = [[false, false], [false, false]]; 
         }
 
         self.piece_lookup[mve.from as usize] = None;
@@ -170,7 +172,7 @@ impl Board {
 
     }
 
-    pub fn make_shallow_move(&self, mve: Move) -> [[Bitboard; 6]; 2] {
+    pub fn make_shallow_move(&self, mve: &Move) -> [[Bitboard; 6]; 2] {
         match mve.move_type {
             MoveType::Normal => self.make_shallow_normal_move(mve),
             MoveType::Castle { kingside } => self.make_shallow_castle_move(mve, kingside),
@@ -180,7 +182,7 @@ impl Board {
         }
     }
 
-    fn make_shallow_normal_move(&self, mve: Move) -> [[Bitboard; 6]; 2] {
+    fn make_shallow_normal_move(&self, mve: &Move) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
         copied_pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u64); 
         copied_pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u64); 
@@ -190,7 +192,7 @@ impl Board {
         copied_pieces
     }
 
-    fn make_shallow_castle_move(&self, mve: Move, kingside: bool) -> [[Bitboard; 6]; 2] {
+    fn make_shallow_castle_move(&self, mve: &Move, kingside: bool) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
         copied_pieces[mve.color as usize][King as usize].clear_bit(mve.from as u64);
         copied_pieces[mve.color as usize][King as usize].set_bit(mve.to as u64);
@@ -203,7 +205,7 @@ impl Board {
         copied_pieces
     }
 
-    fn make_shallow_double_push_move(&self, mve: Move) -> [[Bitboard; 6]; 2] {
+    fn make_shallow_double_push_move(&self, mve: &Move) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
         copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
         copied_pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64); 
@@ -211,7 +213,7 @@ impl Board {
         
     }
 
-    fn make_shallow_en_passant_move(&self, mve: Move) -> [[Bitboard; 6]; 2] {
+    fn make_shallow_en_passant_move(&self, mve: &Move) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
         copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
         copied_pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64); 
@@ -225,7 +227,7 @@ impl Board {
 
     }
 
-    fn make_shallow_promotion_move(&self, mve: Move, promotion: Piece) -> [[Bitboard; 6]; 2] {
+    fn make_shallow_promotion_move(&self, mve: &Move, promotion: Piece) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
         copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
         copied_pieces[mve.color as usize][promotion as usize].set_bit(mve.to as u64); 
@@ -234,6 +236,14 @@ impl Board {
             copied_pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
         }
         copied_pieces
+    }
+
+    pub fn can_castle_queenside(&self, color: Color) -> bool {
+        self.castling_rights[color as usize][0]
+    }
+
+    pub fn can_castle_kingside(&self, color: Color) -> bool {
+        self.castling_rights[color as usize][1]
     }
 
 }
