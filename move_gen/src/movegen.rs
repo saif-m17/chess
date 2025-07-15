@@ -5,6 +5,10 @@ use crate::board::Board;
 
 /// Returns a boolean check if the move is legal
 pub fn is_legal_move(board: &Board, color: Color, mve: Move) -> bool {
+    let new_board_pieces = board.make_shallow_move(mve);
+    let king_index = new_board_pieces[color as usize][King as usize].trailing_zeros() as u64; 
+    let king_square = Square::try_from(king_index).unwrap();
+    is_attacked(new_board_pieces, king_square, color)
     
 }
 
@@ -72,13 +76,13 @@ pub fn get_pseudo_queen_moves(board: &Board, color: Color, valid_destinations: B
     let enemies_not_allies = enemies & !allies;
 
     // Getting moves in rook directions
-    let mut rook_attacks = get_sliding_piece_attacks(board, from, &ROOK_MAGICS); 
+    let mut rook_attacks = get_sliding_piece_attacks(enemies | allies, from, &ROOK_MAGICS); 
     rook_attacks = rook_attacks & enemies_not_allies & valid_destinations;
 
     moves.extend(extract_moves(board, color, rook_attacks, from, Queen)); 
 
     // Getting moves in bishop directions
-    let mut bishop_attacks = get_sliding_piece_attacks(board, from, &BISHOP_MAGICS); 
+    let mut bishop_attacks = get_sliding_piece_attacks(enemies | allies, from, &BISHOP_MAGICS); 
     bishop_attacks = bishop_attacks & enemies_not_allies & valid_destinations;
 
     moves.extend(extract_moves(board, color, bishop_attacks, from, Queen));
@@ -100,7 +104,7 @@ pub fn get_pseudo_rook_moves(board: &Board, color: Color, valid_destinations: Bi
         let from = Square::try_from(rook_index).unwrap();
         rook_bb.clear_bit(rook_index); 
 
-        let mut attacks = get_sliding_piece_attacks(board, from, &ROOK_MAGICS); 
+        let mut attacks = get_sliding_piece_attacks(enemies | allies, from, &ROOK_MAGICS); 
         attacks = attacks & enemies_not_allies & valid_destinations;
 
         moves.extend(extract_moves(board, color, attacks, from, Rook)); 
@@ -124,7 +128,7 @@ pub fn get_pseudo_bishop_moves(board: &Board, color: Color, valid_destinations: 
         let from = Square::try_from(bishop_index).unwrap();
         bishop_bb.clear_bit(bishop_index); 
 
-        let mut attacks = get_sliding_piece_attacks(board, from, &BISHOP_MAGICS); 
+        let mut attacks = get_sliding_piece_attacks(enemies | allies, from, &BISHOP_MAGICS); 
         attacks = attacks & enemies_not_allies & valid_destinations; 
 
         moves.extend(extract_moves(board, color, attacks, from, Bishop)); 
@@ -435,20 +439,44 @@ fn get_attackers(board: &Board, color: Color, square:Square) -> (Bitboard, u32) 
     let enemy_color = color.opposite_color(); 
     let mut attackers = 0u64; 
     let enemies = board.get_pieces(enemy_color); 
+    let all_pieces = board.get_all_pieces();
 
     attackers |= ATTACK_TABLES.pawn_attacks[color as usize][square as usize] & enemies;
     attackers |= ATTACK_TABLES.knight_attacks[square as usize] & enemies;
     attackers |= ATTACK_TABLES.king_attacks[square as usize] & enemies;
-    attackers |= get_sliding_piece_attacks(board, square, &ROOK_MAGICS) & enemies;
-    attackers |= get_sliding_piece_attacks(board, square, &BISHOP_MAGICS) & enemies;
+    attackers |= get_sliding_piece_attacks(all_pieces, square, &ROOK_MAGICS) & enemies;
+    attackers |= get_sliding_piece_attacks(all_pieces, square, &BISHOP_MAGICS) & enemies;
 
     (attackers, attackers.count_ones())
 }
 
+fn is_attacked(pieces: [[Bitboard; 6]; 2], square: Square, color: Color) -> bool {
+    let mut attackers = 0u64; 
+    let enemies_bbs = pieces[color.opposite_color() as usize];
+    let enemies = enemies_bbs[0] | enemies_bbs[1] | enemies_bbs[2] | 
+                        enemies_bbs[3] | enemies_bbs[4] | enemies_bbs[5]; 
+
+    attackers |= ATTACK_TABLES.pawn_attacks[color as usize][square as usize] & enemies;
+    attackers |= ATTACK_TABLES.knight_attacks[square as usize] & enemies;
+    attackers |= ATTACK_TABLES.king_attacks[square as usize] & enemies;
+    attackers |= get_sliding_piece_attacks(get_all_pieces_from_bbs(pieces), square, &ROOK_MAGICS) & enemies;
+    attackers |= get_sliding_piece_attacks(get_all_pieces_from_bbs(pieces), square, &BISHOP_MAGICS) & enemies;
+
+    attackers != 0
+}
+
+/// Get all pieces from a list of all piece bitboards rather than board object
+fn get_all_pieces_from_bbs(pieces: [[Bitboard; 6]; 2]) -> Bitboard {
+    pieces[0][0] | pieces[0][1] | pieces[0][2] | 
+    pieces[0][3] | pieces[0][4] | pieces[0][5] |
+    pieces[1][0] | pieces[1][1] | pieces[1][2] | 
+    pieces[1][3] | pieces[1][4] | pieces[1][5] 
+
+}
+
 /// Returns bitboard of attacks from sliding piece at square, given the magic table to look at
-fn get_sliding_piece_attacks(board: &Board, square: Square, magic_table: &[Magic; 64]) -> Bitboard {
+fn get_sliding_piece_attacks(all_pieces: Bitboard , square: Square, magic_table: &[Magic; 64]) -> Bitboard {
     let magic = &magic_table[square as usize];
-    let all_pieces = board.get_all_pieces(); 
     let blockers = magic.direction_mask & all_pieces;
     let index = blockers.wrapping_mul(magic.magic_num) >> (64 - magic.index_bits);
     let attacks = magic.attack_table[index as usize].unwrap();
