@@ -82,6 +82,10 @@ impl Board {
         }
     }
 
+    pub fn get_en_passant(&self) -> Option<Bitboard> {
+        self.en_passant_square.map(Bitboard::from_square)
+    }
+
     fn make_normal_move(&mut self, mve: Move) {
         self.pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u64); 
         self.pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u64); 

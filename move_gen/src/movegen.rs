@@ -159,7 +159,7 @@ pub fn get_pseudo_knight_moves(board: &Board, color: Color) -> Vec<Move> {
         let mut attacks = ATTACK_TABLES.knight_attacks[knight as usize] & enemies_not_allies; 
 
         moves.extend(extract_moves(board, color, attacks, from, Knight));
-        
+
     }
     moves
 }
@@ -206,8 +206,12 @@ pub fn get_pseudo_pawn_moves(board: &Board, color: Color) -> Vec<Move> {
     for promote_piece in promo_pieces {
         moves.extend(extract_pawn_promotion_captures(board, promotion_elligible, &pawn_attacks_bbs, 
             Some(promote_piece), enemies_not_allies, color)); 
-    } 
+    }   
 
+    // En passant
+    let ep_moves = extract_en_passant_moves(board, color, pawn_bb); 
+    moves.extend(ep_moves); 
+    
     moves
 }
 
@@ -236,6 +240,7 @@ fn extract_pawn_push_moves(bb: Bitboard, offset: i8, color:Color) -> Vec<Move> {
     moves
 }
 
+// TODO FIX THIS TO CONSIDER SQUARES ATTACKED VIA THE OPPOSITE COLOR 
 /// Extracts the pawn attack moves from without considering attacks that lead to promotion (from attack tables)
 fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboard; 64], 
     enemies_not_allies: Bitboard, color: Color) -> Vec<Move> {
@@ -321,6 +326,27 @@ fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitbo
         } 
     }
     moves
+}
+
+/// Extract en passant moves
+fn extract_en_passant_moves(board: &Board, color: Color, pawns: Bitboard) -> Vec<Move> {
+    let mut ep_moves: Vec<Move> = Vec::new();
+    if let Some(ep_square) = board.en_passant_square { 
+        let mut ep_attackers = pawns & ATTACK_TABLES.pawn_attacks[color as usize][ep_square as usize]; 
+
+        while ep_attackers != 0 {
+            let ep_from = ep_attackers.trailing_zeros();
+            ep_attackers.clear_bit(ep_from as u64);
+            let from = Square::try_from(ep_from as u64).unwrap();
+            ep_moves.push(Move::new_en_passant(
+                from,
+                ep_square,
+                color,
+            ))
+        }
+    } 
+
+    ep_moves
 }
 
 /// Returns bitboard of rays in all directions given in directions_list originating from square.
@@ -439,6 +465,16 @@ fn extract_moves(board: &Board, color: Color, mut attacks: Bitboard, from: Squar
 }
 
 fn moves_given_checker(board: &Board, color: Color, checkers: Bitboard, pinned_pieces: Bitboard) {
+
+    let enemies = board.get_pieces(color.opposite_color());
+    let allies = board.get_pieces(color);
+    let enemies_not_allies = enemies & !allies;
+
+    // Pawn moves
+
+
+
+
      
 }
 
