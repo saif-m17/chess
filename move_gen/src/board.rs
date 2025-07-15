@@ -170,4 +170,70 @@ impl Board {
 
     }
 
+    pub fn make_shallow_move(self, mve: Move) -> [[Bitboard; 6]; 2] {
+        match mve.move_type {
+            MoveType::Normal => self.make_shallow_normal_move(mve),
+            MoveType::Castle { kingside } => self.make_shallow_castle_move(mve, kingside),
+            MoveType::EnPassant => self.make_shallow_en_passant_move(mve),
+            MoveType::DoublePawnPush => self.make_shallow_double_push_move(mve),
+            MoveType::Promotion { piece } => self.make_shallow_promotion_move(mve, piece),
+        }
+    }
+
+    fn make_shallow_normal_move(self, mve: Move) -> [[Bitboard; 6]; 2] {
+        let mut copied_pieces = self.pieces.clone(); 
+        copied_pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u64); 
+        copied_pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u64); 
+        if let Some(captured_piece) = mve.captured {
+            copied_pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
+        }
+        copied_pieces
+    }
+
+    fn make_shallow_castle_move(self, mve: Move, kingside: bool) -> [[Bitboard; 6]; 2] {
+        let mut copied_pieces = self.pieces.clone(); 
+        copied_pieces[mve.color as usize][King as usize].clear_bit(mve.from as u64);
+        copied_pieces[mve.color as usize][King as usize].set_bit(mve.to as u64);
+
+        let rook_to_index = ROOK_CASTLING_DIRECTION[kingside as usize](Bitboard::from_square(mve.to)).trailing_zeros() as u64; 
+        let rook_from_index = ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][kingside as usize] as u64;
+
+        copied_pieces[mve.color as usize][Rook as usize].clear_bit(rook_from_index);
+        copied_pieces[mve.color as usize][Rook as usize].set_bit(rook_to_index); 
+        copied_pieces
+    }
+
+    fn make_shallow_double_push_move(self, mve: Move) -> [[Bitboard; 6]; 2] {
+        let mut copied_pieces = self.pieces.clone(); 
+        copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
+        copied_pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64); 
+        copied_pieces
+        
+    }
+
+    fn make_shallow_en_passant_move(self, mve: Move) -> [[Bitboard; 6]; 2] {
+        let mut copied_pieces = self.pieces.clone(); 
+        copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
+        copied_pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64); 
+
+        let to_index = mve.to as u8;
+        let offset = OFFSET_SINGLE_PUSH[mve.color as usize] as i16;
+        let captured_piece_index = (to_index as i16 - offset) as u64;
+
+        copied_pieces[mve.color.opposite_color() as usize][Pawn as usize].clear_bit(captured_piece_index);
+        copied_pieces
+
+    }
+
+    fn make_shallow_promotion_move(self, mve: Move, promotion: Piece) -> [[Bitboard; 6]; 2] {
+        let mut copied_pieces = self.pieces.clone(); 
+        copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
+        copied_pieces[mve.color as usize][promotion as usize].set_bit(mve.to as u64); 
+
+        if let Some(captured_piece) = mve.captured {
+            copied_pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
+        }
+        copied_pieces
+    }
+
 }

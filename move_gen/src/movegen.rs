@@ -5,7 +5,7 @@ use crate::board::Board;
 
 /// Returns a boolean check if the move is legal
 pub fn is_legal_move(board: &Board, color: Color, mve: Move) -> bool {
-    todo!()
+    
 }
 
 /// Returns vector of legal moves
@@ -478,35 +478,6 @@ fn extract_moves(board: &Board, color: Color, mut attacks: Bitboard, from: Squar
 
 /// Possibly - pin-aware move generation. Work in progress if checking for legality after the fact becomes a bottleneck.
 fn _moves_given_checker(board: &Board, color: Color, checkers: Bitboard, pinned_pieces: Bitboard, king_square: Square) {
-    let mut moves: Vec<Move> = Vec::new();
-
-    let all_squares = board.get_all_pieces(); 
-    let empty = !all_squares; 
-    let enemies = board.get_pieces(color.opposite_color());
-    let allies = board.get_pieces(color);
-    let _enemies_not_allies = enemies & !allies;
-
-    let checker_index = checkers.trailing_zeros();
-
-    let between_checker_and_king = IN_BETWEEN_SQUARES[king_square as usize][checker_index as usize];
-    let valid_destination_squares = between_checker_and_king | checkers; 
-
-    // Pawn moves
-    let pawn_bb = board.pieces[color as usize][Pawn as usize]; 
-    let one_step = FORWARD_SHIFT[color as usize](pawn_bb) & empty & valid_destination_squares; 
-    let two_step = FORWARD_SHIFT[color as usize](one_step) & empty & PAWN_DOUBLE_RANK[color as usize] & valid_destination_squares;
-
-    moves.extend(extract_pawn_push_moves(one_step, OFFSET_SINGLE_PUSH[color as usize], color));
-    moves.extend(extract_pawn_push_moves(two_step, OFFSET_DOUBLE_PUSH[color as usize], color));
-
-    let promotions = PAWN_PROMOTION[color as usize](pawn_bb) & empty;
-    let promo_pieces = [Queen, Rook, Bishop, Knight];
-    for promote_piece in promo_pieces {
-        moves.extend(extract_pawn_promotions(promotions, Some(promote_piece), color)); 
-    }
-
-    // WORK IN PROGRESS. 
-    todo!()
-
+    unimplemented!()
 }
 
