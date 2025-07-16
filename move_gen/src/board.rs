@@ -7,6 +7,7 @@ pub struct Board {
     pub piece_lookup: [Option<Piece>; 64],
     pub past_moves: Vec<Move>,
     pub en_passant_square: Option<Square>,
+    pub prev_en_passant_squares: Vec<Option<Square>>,
     pub move_changed_castling_rights: [[i32; 2]; 2],
     pub move_number: u64,
 }
@@ -45,11 +46,14 @@ impl Board {
 
         let past_moves: Vec<Move> = Vec::new(); 
 
+        let prev_en_passant_squares: Vec<Option<Square>> = Vec::new(); 
+
         let move_changed_castling_rights = [[-1, -1], [-1, -1]];
 
         let move_number = 0u64;  
 
-        Board { pieces, piece_lookup, past_moves, en_passant_square:None, move_changed_castling_rights, move_number }
+        Board { pieces, piece_lookup, past_moves, en_passant_square:None, 
+            prev_en_passant_squares, move_changed_castling_rights, move_number }
     }
 
     /// Gets pieces for color 
@@ -76,7 +80,8 @@ impl Board {
 
     /// Makes given move by updating current board
     pub fn make_move_in_place(&mut self, mve: Move) {
-        self.move_number += 1; 
+        self.move_number += 1;
+        self.prev_en_passant_squares.push(self.en_passant_square);  
         match mve.move_type {
             MoveType::Normal => self.make_normal_move(mve),
             MoveType::Castle { kingside } => self.make_castle_move(mve, kingside),
@@ -108,6 +113,10 @@ impl Board {
             })
         }
 
+        if self.en_passant_square.is_some() {
+            self.en_passant_square = None; 
+        }
+
         self.piece_lookup[mve.from as usize] = None;
         self.piece_lookup[mve.to as usize] = Some(mve.piece); 
 
@@ -133,6 +142,10 @@ impl Board {
         self.move_changed_castling_rights.iter_mut().flatten().for_each(|x| {
             if *x < 0 { *x = self.move_number as i32; }
         });  
+
+        if self.en_passant_square.is_some() {
+            self.en_passant_square = None;
+        }
 
         self.past_moves.push(mve); 
     }
@@ -165,6 +178,7 @@ impl Board {
 
         self.pieces[mve.color.opposite_color() as usize][Pawn as usize].clear_bit(captured_piece_index);
         self.piece_lookup[captured_piece_index as usize] = None;
+        self.en_passant_square = None;
     }
 
     fn make_promotion_move(&mut self, mve: Move, promotion: Piece) {
@@ -177,6 +191,10 @@ impl Board {
 
         self.piece_lookup[mve.from as usize] = None;
         self.piece_lookup[mve.to as usize] = Some(Pawn); 
+
+        if self.en_passant_square.is_some() {
+            self.en_passant_square = None;
+        }
 
     }
 
@@ -256,6 +274,8 @@ impl Board {
                 MoveType::Promotion { piece } => self.unmake_promotion_move(last_move, piece),
             }
             self.move_number -= 1;
+            let prev_ep = self.prev_en_passant_squares.pop().flatten();
+            self.en_passant_square = prev_ep;
         }
     }
 
@@ -314,14 +334,42 @@ impl Board {
     }
 
     fn unmake_double_push_move(&mut self, mve: Move) {
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.to as u64);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.from as u64);
+
+        self.piece_lookup[mve.to as usize] = None;
+        self.piece_lookup[mve.from as usize] = Some(Pawn);
 
     }
 
     fn unmake_en_passant_move(&mut self, mve: Move) {
 
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.to as u64);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.from as u64); 
+
+        self.piece_lookup[mve.to as usize] = None;
+        self.piece_lookup[mve.from as usize] = Some(Pawn); 
+
+        let to_index = mve.to as u8;
+        let offset = OFFSET_SINGLE_PUSH[mve.color as usize] as i16;
+        let captured_piece_index = (to_index as i16 - offset) as u64;
+
+        self.pieces[mve.color.opposite_color() as usize][Pawn as usize].set_bit(captured_piece_index);
+        self.piece_lookup[captured_piece_index as usize] = Some(Pawn);
+
     }
 
     fn unmake_promotion_move(&mut self, mve: Move, promotion: Piece) {
+
+        self.pieces[mve.color as usize][promotion as usize].clear_bit(mve.to as u64);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.from as u64); 
+
+        if let Some(captured_piece) = mve.captured {
+            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].set_bit(mve.to as u64); 
+        }
+
+        self.piece_lookup[mve.from as usize] = Some(Pawn);
+        self.piece_lookup[mve.to as usize] = mve.captured; 
 
     }
 
