@@ -7,7 +7,8 @@ pub struct Board {
     pub piece_lookup: [Option<Piece>; 64],
     pub past_moves: Vec<Move>,
     pub en_passant_square: Option<Square>,
-    pub castling_rights: [[bool; 2]; 2],
+    pub move_changed_castling_rights: [[i32; 2]; 2],
+    pub move_number: u64,
 }
 
 impl Board {
@@ -44,9 +45,11 @@ impl Board {
 
         let past_moves: Vec<Move> = Vec::new(); 
 
-        let castling_rights = [[true, true], [true, true]]; 
+        let move_changed_castling_rights = [[-1, -1], [-1, -1]];
 
-        Board { pieces, piece_lookup, past_moves, en_passant_square:None, castling_rights }
+        let move_number = 0u64;  
+
+        Board { pieces, piece_lookup, past_moves, en_passant_square:None, move_changed_castling_rights, move_number }
     }
 
     /// Gets pieces for color 
@@ -73,6 +76,7 @@ impl Board {
 
     /// Makes given move by updating current board
     pub fn make_move_in_place(&mut self, mve: Move) {
+        self.move_number += 1; 
         match mve.move_type {
             MoveType::Normal => self.make_normal_move(mve),
             MoveType::Castle { kingside } => self.make_castle_move(mve, kingside),
@@ -94,12 +98,14 @@ impl Board {
             self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
         }
 
-        if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && self.castling_rights[mve.color as usize][0] {
-            self.castling_rights[mve.color as usize][0] = false; 
-        } else if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][1] && self.castling_rights[mve.color as usize][1] {
-            self.castling_rights[mve.color as usize][1] = false; 
-        } else if mve.piece == King && self.castling_rights.iter().flatten().any(|&b| b) {
-            self.castling_rights = [[false, false], [false, false]]; 
+        if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && self.can_castle_queenside(mve.color) {
+            self.move_changed_castling_rights[mve.color as usize][0] = self.move_number as i32; 
+        } else if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][1] && self.can_castle_kingside(mve.color) {
+            self.move_changed_castling_rights[mve.color as usize][1] = self.move_number as i32;
+        } else if mve.piece == King && self.move_changed_castling_rights[mve.color as usize].iter().any(|&b| b < 0) {
+            self.move_changed_castling_rights[mve.color as usize].iter_mut().for_each(|x| {
+                if *x < 0 { *x = self.move_number as i32; }
+            })
         }
 
         self.piece_lookup[mve.from as usize] = None;
@@ -124,7 +130,9 @@ impl Board {
         self.piece_lookup[rook_from_index as usize] = None;
         self.piece_lookup[rook_to_index as usize] = Some(Rook);
 
-        self.castling_rights = [[false, false], [false, false]]; 
+        self.move_changed_castling_rights.iter_mut().flatten().for_each(|x| {
+            if *x < 0 { *x = self.move_number as i32; }
+        });  
 
         self.past_moves.push(mve); 
     }
@@ -238,12 +246,91 @@ impl Board {
         copied_pieces
     }
 
+    pub fn unmake_move(&mut self) {
+        if let Some(last_move) = self.past_moves.pop() {
+            match last_move.move_type {
+                MoveType::Normal => self.unmake_normal_move(last_move),
+                MoveType::Castle { kingside } => self.unmake_castle_move(last_move, kingside),
+                MoveType::DoublePawnPush => self.unmake_double_push_move(last_move),
+                MoveType::EnPassant => self.unmake_en_passant_move(last_move),
+                MoveType::Promotion { piece } => self.unmake_promotion_move(last_move, piece),
+            }
+            self.move_number -= 1;
+        }
+    }
+
+    fn unmake_normal_move(&mut self, mve: Move) {
+
+        self.pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.to as u64); 
+        self.pieces[mve.color as usize][mve.piece as usize].set_bit(mve.from as u64); 
+
+        if let Some(captured_piece) = mve.captured {
+            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].set_bit(mve.to as u64); 
+        }
+
+        if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && 
+                            self.move_changed_castling_rights[mve.color as usize][0] == self.move_number as i32 {
+
+            self.move_changed_castling_rights[mve.color as usize][0] = -1; 
+
+        } else if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][1] &&
+                            self.move_changed_castling_rights[mve.color as usize][1] == self.move_number as i32 {
+
+            self.move_changed_castling_rights[mve.color as usize][1] = -1; 
+
+        } else if mve.piece == King && self.move_changed_castling_rights[mve.color as usize].iter().any(|&b| b == self.move_number as i32) {
+            self.move_changed_castling_rights[mve.color as usize].iter_mut().for_each(|x| {
+                if *x == self.move_number as i32 { 
+                    *x = -1; 
+                }
+            });   
+        }
+
+        self.piece_lookup[mve.from as usize] = Some(mve.piece);
+        self.piece_lookup[mve.to as usize] = mve.captured; 
+
+    }
+
+    fn unmake_castle_move(&mut self, mve: Move, kingside: bool) {
+        self.pieces[mve.color as usize][King as usize].clear_bit(mve.to as u64);
+        self.pieces[mve.color as usize][King as usize].set_bit(mve.from as u64);
+
+        let rook_from_index = ROOK_CASTLING_DIRECTION[kingside as usize](Bitboard::from_square(mve.to)).trailing_zeros() as u64; 
+        let rook_to_index = ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][kingside as usize] as u64;
+
+        self.pieces[mve.color as usize][Rook as usize].clear_bit(rook_from_index);
+        self.pieces[mve.color as usize][Rook as usize].set_bit(rook_to_index); 
+
+        self.piece_lookup[mve.to as usize] = None;
+        self.piece_lookup[mve.from as usize] = Some(King);
+
+        self.piece_lookup[rook_from_index as usize] = None;
+        self.piece_lookup[rook_to_index as usize] = Some(Rook);
+
+        self.move_changed_castling_rights.iter_mut().flatten().for_each(|x| {
+            if *x == self.move_number as i32 { *x = -1; }
+        });  
+
+    }
+
+    fn unmake_double_push_move(&mut self, mve: Move) {
+
+    }
+
+    fn unmake_en_passant_move(&mut self, mve: Move) {
+
+    }
+
+    fn unmake_promotion_move(&mut self, mve: Move, promotion: Piece) {
+
+    }
+
     pub fn can_castle_queenside(&self, color: Color) -> bool {
-        self.castling_rights[color as usize][0]
+        self.move_changed_castling_rights[color as usize][0] < 0
     }
 
     pub fn can_castle_kingside(&self, color: Color) -> bool {
-        self.castling_rights[color as usize][1]
+        self.move_changed_castling_rights[color as usize][1] < 0
     }
 
 }
