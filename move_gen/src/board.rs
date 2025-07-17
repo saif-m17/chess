@@ -1,3 +1,5 @@
+use std::fmt::Error;
+
 use crate::bitboards::{*}; 
 use crate::moves::{Color::{self, *}, Move, MoveType, Piece::{self, *}, Square::{self, *}};
 
@@ -10,6 +12,8 @@ pub struct Board {
     pub prev_en_passant_squares: Vec<Option<Square>>,
     pub move_changed_castling_rights: [[i32; 2]; 2],
     pub move_number: u64,
+    pub half_move_clock: u64,
+    pub side: Color,
 }
 
 impl Board {
@@ -50,10 +54,85 @@ impl Board {
 
         let move_changed_castling_rights = [[-1, -1], [-1, -1]];
 
-        let move_number = 0u64;  
+        let move_number = 0u64;
+
+        let half_move_clock = 0u64;   
 
         Board { pieces, piece_lookup, past_moves, en_passant_square:None, 
-            prev_en_passant_squares, move_changed_castling_rights, move_number }
+            prev_en_passant_squares, move_changed_castling_rights, move_number, half_move_clock, side:White }
+    }
+
+    /// Turns a FEN string into a new board object
+    pub fn from_fen(fen_string: &str) -> Result<Board, FenError> {
+        let parts: Vec<&str> = fen_string.split_whitespace().collect();
+        if parts.len() != 6 { return Err(FenError::InvalidFormat) }
+
+        let mut board = Board {
+            pieces: [[0u64; 6]; 2],
+            piece_lookup: [None; 64],
+            past_moves: Vec::new(),
+            en_passant_square: None,
+            prev_en_passant_squares: Vec::new(),
+            move_changed_castling_rights: [[1; 2]; 2], // some positive number to default to false
+            move_number: parts[5].parse().map_err(|_| FenError::InvalidFormat)?,
+            half_move_clock: parts[4].parse().map_err(|_| FenError::InvalidFormat)?,
+            side: match parts[1].parse().map_err(|_| FenError::InvalidFormat)? {
+                0 => White,
+                1 => Black,
+                _ => return Err(FenError::InvalidFormat),
+            },
+        }; 
+
+        let piece_rep = parts[0];
+
+        let mut file = 0u64;
+        let mut rank = 7u64; 
+        for ch in piece_rep.chars() {
+            match ch {
+                '/' => {
+                    rank -= 1;
+                    file = 0u64; 
+                }
+                '1'..='8' => file += ch.to_digit(10).unwrap() as u64,
+                _ => {
+                    let (color, piece_type) = match ch {
+                        'P' => (White, Pawn), 'N' => (White, Knight), 'B' => (White, Bishop), 
+                        'R' => (White, Rook), 'Q' => (White, Queen), 'K' => (White, King),
+                        'p' => (Black, Pawn), 'n' => (Black, Knight), 'b' => (Black, Bishop), 
+                        'r' => (Black, Rook), 'q' => (Black, Queen), 'k' => (Black, King),
+                        _ => return Err(FenError::InvalidPiece(ch)),
+                    };
+                    let square_index: u64 = rank * 8 + file; 
+                    board.pieces[color as usize][piece_type as usize] |= 1u64 << square_index; 
+                    board.piece_lookup[square_index as usize] = Some(piece_type); 
+                    file += 1; 
+                }
+            } 
+        }
+
+        let castling_rights = parts[2];
+        for ch in castling_rights.chars() {
+            match ch {
+                'K' => board.move_changed_castling_rights[0][1] = -1,
+                'Q' => board.move_changed_castling_rights[0][0] = -1,
+                'k' => board.move_changed_castling_rights[1][1] = -1,
+                'q' => board.move_changed_castling_rights[1][0] = -1,
+                '-' => break,
+                _ => return Err(FenError::InvalidCastling),
+            }
+        }
+
+        let en_passant = parts[3];
+        for ch in en_passant.chars() {
+            if ch != '-' {
+                let bytes = parts[3].as_bytes();
+                let square = (bytes[1] - b'1') * 8 + (bytes[0] - b'a');
+                board.en_passant_square = Some(Square::try_from(square as u64).unwrap());
+            }
+        } 
+
+        Ok(board)
+        
     }
 
     /// Gets pieces for color 
@@ -81,21 +160,28 @@ impl Board {
     /// Makes given move by updating current board
     pub fn make_move_in_place(&mut self, mve: Move) {
         self.move_number += 1;
-        self.prev_en_passant_squares.push(self.en_passant_square);  
+        self.prev_en_passant_squares.push(self.en_passant_square);
         match mve.move_type {
-            MoveType::Normal => self.make_normal_move(mve),
-            MoveType::Castle { kingside } => self.make_castle_move(mve, kingside),
-            MoveType::EnPassant => self.make_en_passant_move(mve),
-            MoveType::DoublePawnPush => self.make_double_push_move(mve),
-            MoveType::Promotion { piece } => self.make_promotion_move(mve, piece),
+            MoveType::Normal => self.make_normal_move(&mve),
+            MoveType::Castle { kingside } => self.make_castle_move(&mve, kingside),
+            MoveType::EnPassant => self.make_en_passant_move(&mve),
+            MoveType::DoublePawnPush => self.make_double_push_move(&mve),
+            MoveType::Promotion { piece } => self.make_promotion_move(&mve, piece),
         }
+        if mve.piece != Pawn && !mve.is_capture() {
+            self.half_move_clock += 1; 
+        } else {
+            self.half_move_clock = 0; 
+        } 
+        self.past_moves.push(mve);
+        self.side = self.side.opposite_color();  
     }
 
     pub fn get_en_passant(&self) -> Option<Bitboard> {
         self.en_passant_square.map(Bitboard::from_square)
     }
 
-    fn make_normal_move(&mut self, mve: Move) {
+    fn make_normal_move(&mut self, mve: &Move) {
         self.pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u64); 
         self.pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u64); 
 
@@ -120,10 +206,9 @@ impl Board {
         self.piece_lookup[mve.from as usize] = None;
         self.piece_lookup[mve.to as usize] = Some(mve.piece); 
 
-        self.past_moves.push(mve); 
     }
 
-    fn make_castle_move(&mut self, mve: Move, kingside: bool) {
+    fn make_castle_move(&mut self, mve: &Move, kingside: bool) {
         self.pieces[mve.color as usize][King as usize].clear_bit(mve.from as u64);
         self.pieces[mve.color as usize][King as usize].set_bit(mve.to as u64);
 
@@ -147,10 +232,9 @@ impl Board {
             self.en_passant_square = None;
         }
 
-        self.past_moves.push(mve); 
     }
 
-    fn make_double_push_move(&mut self, mve: Move) {
+    fn make_double_push_move(&mut self, mve: &Move) {
         self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
         self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64);
 
@@ -165,7 +249,7 @@ impl Board {
 
     }
 
-    fn make_en_passant_move(&mut self, mve: Move) {
+    fn make_en_passant_move(&mut self, mve: &Move) {
         self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
         self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64); 
 
@@ -181,7 +265,7 @@ impl Board {
         self.en_passant_square = None;
     }
 
-    fn make_promotion_move(&mut self, mve: Move, promotion: Piece) {
+    fn make_promotion_move(&mut self, mve: &Move, promotion: Piece) {
         self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
         self.pieces[mve.color as usize][promotion as usize].set_bit(mve.to as u64); 
 
@@ -276,6 +360,7 @@ impl Board {
             self.move_number -= 1;
             let prev_ep = self.prev_en_passant_squares.pop().flatten();
             self.en_passant_square = prev_ep;
+            self.side = self.side.opposite_color();
         }
     }
 

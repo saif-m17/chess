@@ -171,5 +171,13 @@ pub const ROOK_CASTLING_DIRECTION: [fn(Bitboard) -> Bitboard; 2] = [shift_east, 
 pub const ROOK_CASTLING_INITIAL_SQUARE: [[Square; 2]; 2] = [[Square::A1, Square::A8], [Square::H1, Square::H8]]; // White first, Queenside first
 pub const KING_INITIAL_SQUARE: [Square; 2] = [Square::E1, Square::E8]; // White, Black
 
-// Misc utility funtions
+// Misc utility stuff
+
+#[derive(Debug)]
+pub enum FenError {
+    InvalidFormat,
+    InvalidPiece(char),
+    InvalidSquare(String),
+    InvalidCastling,
+}
 
