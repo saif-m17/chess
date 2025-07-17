@@ -222,7 +222,7 @@ pub fn get_pseudo_pawn_moves(board: &Board, color: Color, valid_destinations: Bi
     let one_step = FORWARD_SHIFT[color as usize](pawn_bb) & empty & valid_destinations; 
 
     // Pushing pawns two squares forward
-    let two_step = FORWARD_SHIFT[color as usize](one_step) & empty & PAWN_DOUBLE_RANK[color as usize] & valid_destinations;
+    let two_step = FORWARD_SHIFT[color as usize](one_step & PAWN_DOUBLE_RANK[color as usize]) & empty  & valid_destinations;
 
     // Extracting moves from one_step
     let pawn_push_moves = extract_pawn_push_moves(one_step, OFFSET_SINGLE_PUSH[color as usize], color);
@@ -488,7 +488,7 @@ fn get_attackers(board: &Board, color: Color, square:Square) -> (Bitboard, u32) 
     (attackers, attackers.count_ones())
 }
 
-fn is_attacked(pieces: [[Bitboard; 6]; 2], square: Square, color: Color) -> bool {
+pub fn is_attacked(pieces: [[Bitboard; 6]; 2], square: Square, color: Color) -> bool {
     let mut attackers = 0u64; 
     let enemies_bbs = pieces[color.opposite_color() as usize];
     let enemies = enemies_bbs[0] | enemies_bbs[1] | enemies_bbs[2] | 
@@ -540,6 +540,12 @@ fn extract_moves(board: &Board, color: Color, mut attacks: Bitboard, from: Squar
         )) 
     }
     moves 
+}
+
+pub fn is_in_check(board: &Board, color: Color) -> bool {
+    let king_index = board.pieces[color as usize][King as usize].trailing_zeros() as u64; 
+    let king_square = Square::try_from(king_index).unwrap(); 
+    is_attacked(board.pieces, king_square, color)
 }
 
 /// Possibly - pin-aware move generation. Work in progress if checking for legality after the fact becomes a bottleneck.

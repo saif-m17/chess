@@ -1,7 +1,6 @@
-use std::fmt::Error;
-
 use crate::bitboards::{*}; 
 use crate::moves::{Color::{self, *}, Move, MoveType, Piece::{self, *}, Square::{self, *}};
+use crate::movegen::is_attacked; 
 
 #[derive(Clone)]
 pub struct Board {
@@ -459,11 +458,64 @@ impl Board {
     }
 
     pub fn can_castle_queenside(&self, color: Color) -> bool {
-        self.move_changed_castling_rights[color as usize][0] < 0
+        let castling_right = self.move_changed_castling_rights[color as usize][0] < 0;
+        let squares_between_free = CASTLING_BETWEEN_SQUARES[color as usize][0] & self.get_all_pieces() == 0; 
+        let squares_cant_attack = CASTLING_SQUARES_CANT_BE_ATTACKED[color as usize][0]; 
+        let square_1_attacked = is_attacked(self.pieces, squares_cant_attack[0], color);
+        let square_2_attacked = is_attacked(self.pieces, squares_cant_attack[1], color); 
+        castling_right && !square_1_attacked && !square_2_attacked && squares_between_free
     }
 
     pub fn can_castle_kingside(&self, color: Color) -> bool {
-        self.move_changed_castling_rights[color as usize][1] < 0
+        let castling_right = self.move_changed_castling_rights[color as usize][1] < 0;
+        let squares_between_free = CASTLING_BETWEEN_SQUARES[color as usize][1] & self.get_all_pieces() == 0; 
+        let squares_cant_attack = CASTLING_SQUARES_CANT_BE_ATTACKED[color as usize][1]; 
+        let square_1_attacked = is_attacked(self.pieces, squares_cant_attack[0], color);
+        let square_2_attacked = is_attacked(self.pieces, squares_cant_attack[1], color); 
+        castling_right && !square_1_attacked && !square_2_attacked && squares_between_free 
+    }
+
+    pub fn display(&self) {
+        for rank in (0..8).rev() { 
+            print!("{} ", rank + 1);
+            for file in 0..8 {
+                let sq = rank * 8 + file;
+                let mut found = false;
+
+                for color in 0..2 {
+                    for piece in 0..6 {
+                        if (self.pieces[color][piece] >> sq) & 1 != 0 {
+                            let c = match (color, piece) {
+                                (0, 0) => 'P',
+                                (0, 1) => 'N',
+                                (0, 2) => 'B',
+                                (0, 3) => 'R',
+                                (0, 4) => 'Q',
+                                (0, 5) => 'K',
+                                (1, 0) => 'p',
+                                (1, 1) => 'n',
+                                (1, 2) => 'b',
+                                (1, 3) => 'r',
+                                (1, 4) => 'q',
+                                (1, 5) => 'k',
+                                _ => '?',
+                            };
+                            print!("{} ", c);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if found { break; }
+                }
+
+                if !found {
+                    print!(". ");
+                }
+            }
+            println!();
+        }
+
+        println!("  a b c d e f g h");
     }
 
 }

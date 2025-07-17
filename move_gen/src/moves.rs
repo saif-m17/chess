@@ -47,7 +47,7 @@ pub enum Square {
 }
 
 impl Square {
-    pub fn to_bitboard(self) -> u64 {
+    pub const fn to_bitboard(self) -> u64 {
         1u64 << (self as u64)
     }
 }

@@ -170,6 +170,15 @@ pub const QUEEN_DIRECTIONS: [Direction; 8] = [
 pub const ROOK_CASTLING_DIRECTION: [fn(Bitboard) -> Bitboard; 2] = [shift_east, shift_west]; // Queenside, Kingside
 pub const ROOK_CASTLING_INITIAL_SQUARE: [[Square; 2]; 2] = [[Square::A1, Square::A8], [Square::H1, Square::H8]]; // White first, Queenside first
 pub const KING_INITIAL_SQUARE: [Square; 2] = [Square::E1, Square::E8]; // White, Black
+pub const CASTLING_BETWEEN_SQUARES: [[Bitboard; 2]; 2] = [[Square::B1.to_bitboard() | Square::C1.to_bitboard() | Square::D1.to_bitboard(),
+                                                            Square:: F1.to_bitboard() | Square::G1.to_bitboard()],
+                                                            [Square::B8.to_bitboard() | Square::C8.to_bitboard() | Square::D8.to_bitboard(),
+                                                            Square:: F8.to_bitboard() | Square::G8.to_bitboard()]]; 
+
+pub const CASTLING_SQUARES_CANT_BE_ATTACKED: [[[Square; 2]; 2]; 2] = [[[Square::C1, Square::D1],
+                                                                    [Square:: F1, Square::G1]],
+                                                                    [[Square::C8, Square::D8],
+                                                                    [Square::F8, Square::G8]]]; 
 
 // Misc utility stuff
 
