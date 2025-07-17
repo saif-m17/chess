@@ -23,8 +23,6 @@ fn generate_random_legal_position() -> Board {
 
 
 pub fn perft(board: &mut Board, depth: u64, color: Color) -> u64{
-    println!("Initial Board"); 
-    board.display(); 
     if depth == 0 {
         return 1;
     }
@@ -36,9 +34,9 @@ pub fn perft(board: &mut Board, depth: u64, color: Color) -> u64{
     for mve in moves {
         let to = mve.to as u64;
         let from = mve.from as u64;
-        println!("Moving {from} to {to}"); 
+
         board.make_move_in_place(mve);
-        board.display(); 
+
         if is_in_check(board, color) {
             board.unmake_move();
             continue;

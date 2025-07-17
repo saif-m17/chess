@@ -79,19 +79,18 @@ pub fn get_pseudo_queen_moves(board: &Board, color: Color, valid_destinations: B
 
     let from = Square::try_from(queen_index).unwrap();
 
-    let enemies = board.get_pieces(color.opposite_color());
+    let enemies = board.get_pieces(color.opposite_color()); 
     let allies = board.get_pieces(color);
-    let enemies_not_allies = enemies & !allies;
 
     // Getting moves in rook directions
     let mut rook_attacks = get_sliding_piece_attacks(enemies | allies, from, &ROOK_MAGICS); 
-    rook_attacks = rook_attacks & enemies_not_allies & valid_destinations;
+    rook_attacks = rook_attacks & !allies & valid_destinations;
 
     moves.extend(extract_moves(board, color, rook_attacks, from, Queen)); 
 
     // Getting moves in bishop directions
     let mut bishop_attacks = get_sliding_piece_attacks(enemies | allies, from, &BISHOP_MAGICS); 
-    bishop_attacks = bishop_attacks & enemies_not_allies & valid_destinations;
+    bishop_attacks = bishop_attacks & !allies & valid_destinations;
 
     moves.extend(extract_moves(board, color, bishop_attacks, from, Queen));
 
@@ -103,9 +102,8 @@ pub fn get_pseudo_rook_moves(board: &Board, color: Color, valid_destinations: Bi
     let mut moves: Vec<Move> = Vec::new();
     let mut rook_bb = board.pieces[color as usize][Rook as usize];
 
-    let enemies = board.get_pieces(color.opposite_color());
     let allies = board.get_pieces(color);
-    let enemies_not_allies = enemies & !allies;
+    let enemies = board.get_pieces(color.opposite_color()); 
 
     while rook_bb != 0 {
         let rook_index = rook_bb.trailing_zeros() as u64;
@@ -113,7 +111,7 @@ pub fn get_pseudo_rook_moves(board: &Board, color: Color, valid_destinations: Bi
         rook_bb.clear_bit(rook_index); 
 
         let mut attacks = get_sliding_piece_attacks(enemies | allies, from, &ROOK_MAGICS); 
-        attacks = attacks & enemies_not_allies & valid_destinations;
+        attacks = attacks & !allies & valid_destinations;
 
         moves.extend(extract_moves(board, color, attacks, from, Rook)); 
         
@@ -127,9 +125,8 @@ pub fn get_pseudo_bishop_moves(board: &Board, color: Color, valid_destinations: 
     let mut moves: Vec<Move> = Vec::new();
     let mut bishop_bb = board.pieces[color as usize][Bishop as usize];
 
-    let enemies = board.get_pieces(color.opposite_color());
     let allies = board.get_pieces(color);
-    let enemies_not_allies = enemies & !allies;
+    let enemies = board.get_pieces(color.opposite_color()); 
 
     while bishop_bb != 0 {
         let bishop_index = bishop_bb.trailing_zeros() as u64;
@@ -137,7 +134,7 @@ pub fn get_pseudo_bishop_moves(board: &Board, color: Color, valid_destinations: 
         bishop_bb.clear_bit(bishop_index); 
 
         let mut attacks = get_sliding_piece_attacks(enemies | allies, from, &BISHOP_MAGICS); 
-        attacks = attacks & enemies_not_allies & valid_destinations; 
+        attacks = attacks & !allies & valid_destinations; 
 
         moves.extend(extract_moves(board, color, attacks, from, Bishop)); 
         
@@ -149,15 +146,13 @@ pub fn get_pseudo_bishop_moves(board: &Board, color: Color, valid_destinations: 
 pub fn get_pseudo_king_moves(board: &Board, color: Color) -> Vec<Move>{
     let mut moves: Vec<Move> = Vec::new();
     let king_bb: Bitboard = board.pieces[color as usize][King as usize];
-    let enemies = board.get_pieces(color.opposite_color()); 
     let allies = board.get_pieces(color); 
-    let enemies_not_allies = enemies & !allies;
 
     let king_index = king_bb.trailing_zeros() as u64; 
 
     let from = Square::try_from(king_index).unwrap();
 
-    let attacks = ATTACK_TABLES.king_attacks[king_index as usize] & enemies_not_allies; 
+    let attacks = ATTACK_TABLES.king_attacks[king_index as usize] & !allies; 
 
     moves.extend(extract_moves(board, color, attacks, from, King));
 
@@ -195,17 +190,18 @@ pub fn get_pseudo_knight_moves(board: &Board, color: Color, valid_destinations: 
 
     let mut moves: Vec<Move> = Vec::new();
     let mut knight_bb: Bitboard = board.pieces[color as usize][Knight as usize];
-    let enemies = board.get_pieces(color.opposite_color()); 
     let allies = board.get_pieces(color); 
-    let enemies_not_allies = enemies & !allies;
 
     while knight_bb != 0 {
         let knight = knight_bb.trailing_zeros() as u64;
         knight_bb.clear_bit(knight); 
         let from = Square::try_from(knight).unwrap();
-        let attacks = ATTACK_TABLES.knight_attacks[knight as usize] & enemies_not_allies & valid_destinations; 
+        let attacks = ATTACK_TABLES.knight_attacks[knight as usize] & !allies & valid_destinations; 
 
-        moves.extend(extract_moves(board, color, attacks, from, Knight));
+
+
+        let extracted_moves = extract_moves(board, color, attacks, from, Knight); 
+        moves.extend(extracted_moves);
 
     }
     moves
@@ -522,8 +518,10 @@ fn get_sliding_piece_attacks(all_pieces: Bitboard, square: Square, magic_table: 
 }
 
 /// Extract moves from an attacks bitboard for new normal move.
-fn extract_moves(board: &Board, color: Color, mut attacks: Bitboard, from: Square, piece: Piece) -> Vec<Move>{
+fn extract_moves(board: &Board, color: Color, attacks_fixed: Bitboard, from: Square, piece: Piece) -> Vec<Move>{
     let mut moves: Vec<Move> = Vec::new();
+    let mut attacks = attacks_fixed; 
+
 
     while attacks != 0 {
         let to_index = attacks.trailing_zeros() as u64;
