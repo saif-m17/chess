@@ -181,10 +181,9 @@ pub const CASTLING_SQUARES_CANT_BE_ATTACKED: [[[Square; 2]; 2]; 2] = [[[Square::
                                                                     [Square::F8, Square::G8]]]; 
 
 // Misc utility stuff
-
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FenError {
-    InvalidFormat,
+    InvalidFormat(String),
     InvalidPiece(char),
     InvalidSquare(String),
     InvalidCastling,

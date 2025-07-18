@@ -2,7 +2,7 @@ use crate::bitboards::{*};
 use crate::moves::{Color::{self, *}, Move, MoveType, Piece::{self, *}, Square::{self, *}};
 use crate::movegen::is_attacked; 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Board {
     pub pieces: [[Bitboard; 6]; 2],
     pub piece_lookup: [Option<Piece>; 64],
@@ -64,7 +64,7 @@ impl Board {
     /// Turns a FEN string into a new board object
     pub fn from_fen(fen_string: &str) -> Result<Board, FenError> {
         let parts: Vec<&str> = fen_string.split_whitespace().collect();
-        if parts.len() != 6 { return Err(FenError::InvalidFormat) }
+        if parts.len() != 6 { return Err(FenError::InvalidFormat("Length incorrect.".to_string())) }
 
         let mut board = Board {
             pieces: [[0u64; 6]; 2],
@@ -73,12 +73,12 @@ impl Board {
             en_passant_square: None,
             prev_en_passant_squares: Vec::new(),
             move_changed_castling_rights: [[1; 2]; 2], // some positive number to default to false
-            move_number: parts[5].parse().map_err(|_| FenError::InvalidFormat)?,
-            half_move_clock: parts[4].parse().map_err(|_| FenError::InvalidFormat)?,
-            side: match parts[1].parse().map_err(|_| FenError::InvalidFormat)? {
-                0 => White,
-                1 => Black,
-                _ => return Err(FenError::InvalidFormat),
+            move_number: parts[5].parse().map_err(|_| FenError::InvalidFormat("Move number incorrect.".to_string()))?,
+            half_move_clock: parts[4].parse().map_err(|_| FenError::InvalidFormat("half number clock incorrect.".to_string()))?,
+            side: match parts[1] {
+                "w" => White,
+                "b" => Black,
+                _ => return Err(FenError::InvalidFormat("Side incorrect".to_string())),
             },
         }; 
 
