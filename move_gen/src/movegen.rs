@@ -12,6 +12,20 @@ pub fn moves_into_check(board: &Board, color: Color, mve: &Move) -> bool {
     
 }
 
+/// Returns fully legal moves
+pub fn get_legal_moves(board: &Board, color: Color) -> Vec<Move> {
+    let pseudo_moves = get_pseudo_legal_moves(board, color);
+    let mut legal_moves: Vec<Move> = Vec::new();
+
+    for mve in pseudo_moves {
+        if !moves_into_check(board, color, &mve){
+            legal_moves.push(mve); 
+        }
+        
+    }
+    legal_moves
+}
+
 /// Returns a boolean indicating whether the move is legal 
 pub fn is_move_legal(board: &Board, color: Color, mve: &Move) -> bool {
     let into_check = moves_into_check(board, color, mve);
@@ -487,14 +501,20 @@ fn get_attackers(board: &Board, color: Color, square:Square) -> (Bitboard, u32) 
 pub fn is_attacked(pieces: [[Bitboard; 6]; 2], square: Square, color: Color) -> bool {
     let mut attackers = 0u64; 
     let enemies_bbs = pieces[color.opposite_color() as usize];
-    let enemies = enemies_bbs[0] | enemies_bbs[1] | enemies_bbs[2] | 
-                        enemies_bbs[3] | enemies_bbs[4] | enemies_bbs[5]; 
 
-    attackers |= ATTACK_TABLES.pawn_attacks[color as usize][square as usize] & enemies;
-    attackers |= ATTACK_TABLES.knight_attacks[square as usize] & enemies;
-    attackers |= ATTACK_TABLES.king_attacks[square as usize] & enemies;
-    attackers |= get_sliding_piece_attacks(get_all_pieces_from_bbs(pieces), square, &ROOK_MAGICS) & enemies;
-    attackers |= get_sliding_piece_attacks(get_all_pieces_from_bbs(pieces), square, &BISHOP_MAGICS) & enemies;
+    attackers |= ATTACK_TABLES.pawn_attacks[color as usize][square as usize] & enemies_bbs[Pawn as usize];
+    attackers |= ATTACK_TABLES.knight_attacks[square as usize] & enemies_bbs[Knight as usize];
+    attackers |= ATTACK_TABLES.king_attacks[square as usize] & enemies_bbs[King as usize];
+    attackers |= get_sliding_piece_attacks(
+        get_all_pieces_from_bbs(pieces), 
+        square, 
+        &ROOK_MAGICS) 
+        & (enemies_bbs[Rook as usize] | enemies_bbs[Queen as usize]);
+    attackers |= get_sliding_piece_attacks(
+        get_all_pieces_from_bbs(pieces),
+        square, 
+        &BISHOP_MAGICS) 
+        & (enemies_bbs[Bishop as usize] | enemies_bbs[Queen as usize]);
 
     attackers != 0
 }
