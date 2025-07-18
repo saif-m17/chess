@@ -1,4 +1,6 @@
 use num_enum::TryFromPrimitive;
+use std::fmt;
+use crate::utils::{*}; 
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Piece {
@@ -143,6 +145,27 @@ impl Move {
     /// Check if this move is castling
     pub fn is_castle(&self) -> bool {
         matches!(self.move_type, MoveType::Castle { .. })
+    }
+}
+
+impl fmt::Display for Move {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let from = square_to_string(self.from as u8);
+        let to = square_to_string(self.to as u8);
+        let mut move_str = format!("{}{}", from, to);
+
+        if let MoveType::Promotion {piece} = self.move_type {
+                let promo_char = match piece {
+                    Piece::Knight => 'n',
+                    Piece::Bishop => 'b',
+                    Piece::Rook   => 'r',
+                    Piece::Queen  => 'q',
+                    _ => panic!("Invalid promotion piece"),
+                };
+                move_str.push(promo_char)
+        }
+
+        write!(f, "{}", move_str)
     }
 }
 
