@@ -80,10 +80,10 @@ impl Move {
     /// Creates a castling move
     pub fn new_castle(color: Color, kingside: bool) -> Self {
         let (from, to) = match (color.clone(), kingside) {
-            (Color::White, true) => (Square::E1, Square::G1),   // e1 to g1
-            (Color::White, false) => (Square::E1, Square::C1),  // e1 to c1
-            (Color::Black, true) => (Square::E8, Square::G8), // e8 to g8
-            (Color::Black, false) => (Square::E8, Square::C8), // e8 to c8
+            (Color::White, true) => (Square::E1, Square::G1),  
+            (Color::White, false) => (Square::E1, Square::C1),  
+            (Color::Black, true) => (Square::E8, Square::G8), 
+            (Color::Black, false) => (Square::E8, Square::C8), 
         };
         
         Move {

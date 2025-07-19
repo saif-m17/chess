@@ -411,7 +411,7 @@ fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitbo
 fn extract_en_passant_moves(board: &Board, color: Color, pawns: Bitboard, valid_destinations: Bitboard) -> Vec<Move> {
     let mut ep_moves: Vec<Move> = Vec::new();
     if let Some(ep_square) = board.en_passant_square { 
-        let mut ep_attackers = pawns & ATTACK_TABLES.pawn_attacks[color as usize][ep_square as usize]; 
+        let mut ep_attackers = pawns & ATTACK_TABLES.pawn_attacks[color.opposite_color() as usize][ep_square as usize]; 
         let is_ep_valid = valid_destinations.get_bit(ep_square as u64); 
         if is_ep_valid {
             while ep_attackers != 0 {
