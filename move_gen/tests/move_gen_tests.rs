@@ -1,3 +1,4 @@
+use chess_core::attacktables::ROOK_MAGICS;
 use chess_core::movegen::{*};
 use chess_core::bitboards::{*}; 
 use chess_core::moves::{*, Color::*, Piece::*}; 
@@ -73,5 +74,16 @@ fn test_valid_kiwipete_fen() {
     assert_eq!(board.move_changed_castling_rights[White as usize][1], -1); // K
     assert_eq!(board.move_changed_castling_rights[Black as usize][0], -1); // q
     assert_eq!(board.move_changed_castling_rights[Black as usize][1], -1); // k
+}
+
+#[test]
+fn test_rook_edge_sliding_attacks_gen() {
+    let fen = "r1bqkb1r/pp3ppp/2nppn2/2p5/2B1P3/2N2N2/PPPP1PPP/R1BQR1K1 b kq - 1 6";
+    let board = Board::from_fen(fen).expect("Failed to parse position");
+
+    let attacks = get_sliding_piece_attacks(board.get_all_pieces(), Square::E1 , &ROOK_MAGICS); 
+
+    attacks.display();
+
 }
 

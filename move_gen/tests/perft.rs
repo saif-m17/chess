@@ -6,7 +6,7 @@ use chess_core::utils::{*};
 fn run_perft_test(fen: &str, depth: u64, expected: u64) {
     let mut board = Board::from_fen(fen).unwrap();
     let color = if fen.contains(" w ") { Color::White } else { Color::Black };
-    let result = divide(&mut board, depth, color);
+    let result = perft(&mut board, depth, color);
     assert_eq!(result, expected, "Failed at depth {} for FEN {}", depth, fen);
 }
 
@@ -46,8 +46,23 @@ fn test_starting_position_depth5() {
 }
 
 #[test]
+fn test_starting_position_depth6() {
+    run_perft_test("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6, 119060324);
+}
+
+#[test]
 fn test_kiwipete_depth2() {
-    run_perft_test("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 2, 2039);
+    run_perft_test("r3kq1r/p1pp1pb1/bn2pQp1/3PN3/1p2P3/2N4p/PPPBBPPP/R3K2R w KQkq - 1 2", 2, 1693);
+}
+
+#[test]
+fn test_kiwipete_depth5() {
+    run_perft_test("r3kq1r/p1pp1pb1/bn2pQp1/3PN3/1p2P3/2N4p/PPPBBPPP/R3K2R w KQkq - 1 2", 5, 144415532);
+}
+
+#[test]
+fn test_kiwipete_f6e6_dept1() {
+    run_perft_test("r3kq1r/p1pp1pb1/bn2Q1p1/3PN3/1p2P3/2N4p/PPPBBPPP/R3K2R b KQkq - 0 2", 1, 4);
 }
 
 #[test]
