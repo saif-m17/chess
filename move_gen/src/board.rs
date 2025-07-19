@@ -223,7 +223,7 @@ impl Board {
         self.piece_lookup[rook_from_index as usize] = None;
         self.piece_lookup[rook_to_index as usize] = Some(Rook);
 
-        self.move_changed_castling_rights.iter_mut().flatten().for_each(|x| {
+        self.move_changed_castling_rights[mve.color as usize].iter_mut().for_each(|x| {
             if *x < 0 { *x = self.move_number as i32; }
         });  
 
@@ -273,7 +273,7 @@ impl Board {
         }
 
         self.piece_lookup[mve.from as usize] = None;
-        self.piece_lookup[mve.to as usize] = Some(Pawn); 
+        self.piece_lookup[mve.to as usize] = Some(promotion); 
 
         if self.en_passant_square.is_some() {
             self.en_passant_square = None;

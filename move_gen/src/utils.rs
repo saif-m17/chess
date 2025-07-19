@@ -35,11 +35,6 @@ pub fn perft(board: &mut Board, depth: u64, color: Color) -> u64{
 
         board.make_move_in_place(mve);
 
-        // if is_in_check(board, color) {
-        //     board.unmake_move();
-        //     continue;
-        // }
-
         total_nodes += perft(board, depth - 1, color.opposite_color()); 
         board.unmake_move();
     }
@@ -67,11 +62,6 @@ pub fn divide(board: &mut Board, depth: u64, color: Color) -> u64{
         let mv_string = mve.to_string(); 
 
         board.make_move_in_place(mve);
-
-        // if is_in_check(board, color) {
-        //     board.unmake_move();
-        //     continue;
-        // }
         
         let count = perft(board, depth - 1, color.opposite_color());
         board.unmake_move();
@@ -85,12 +75,12 @@ pub fn divide(board: &mut Board, depth: u64, color: Color) -> u64{
     
 }
 
-pub fn check_a2a4_move(board: &mut Board, color: Color) {
+pub fn check_h2h3_move(board: &mut Board, color: Color) {
     let moves = get_legal_moves(board, color);
 
     for mve in moves {
         let mv_string = mve.to_string(); 
-        if mv_string == "a2a4" {
+        if mv_string == "h2h3" {
             let mut board_copy = board.clone();
             board_copy.make_move_in_place(mve);
             let replies = get_legal_moves(&board_copy, color.opposite_color());

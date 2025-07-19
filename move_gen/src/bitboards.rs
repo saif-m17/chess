@@ -105,10 +105,10 @@ pub const OFFSET_SINGLE_PUSH: [i8; 2] = [8, -8];
 pub const OFFSET_DOUBLE_PUSH: [i8; 2] = [16, -16]; 
 
 // Pawn Attacks - Fix check file first then shift 
-pub const fn pawn_attack_left_white(bb: Bitboard) -> Bitboard { (bb & !FILE_H) << 7 }
-pub const fn pawn_attack_right_white(bb: Bitboard) -> Bitboard { (bb& !FILE_A) << 9 }
-pub const fn pawn_attack_left_black(bb: Bitboard) -> Bitboard { (bb & !FILE_H) >> 9 }
-pub const fn pawn_attack_right_black(bb: Bitboard) -> Bitboard { (bb & !FILE_A) >> 7}
+pub const fn pawn_attack_left_white(bb: Bitboard) -> Bitboard { (bb & !FILE_A) << 7 }
+pub const fn pawn_attack_right_white(bb: Bitboard) -> Bitboard { (bb& !FILE_H) << 9 }
+pub const fn pawn_attack_left_black(bb: Bitboard) -> Bitboard { (bb & !FILE_A) >> 9 }
+pub const fn pawn_attack_right_black(bb: Bitboard) -> Bitboard { (bb & !FILE_H) >> 7}
 
 pub const PAWN_ATTACK_LEFT: [fn(Bitboard) -> Bitboard; 2] = [
     pawn_attack_left_white,
@@ -168,7 +168,7 @@ pub const QUEEN_DIRECTIONS: [Direction; 8] = [
 
 // Castling related constant functions
 pub const ROOK_CASTLING_DIRECTION: [fn(Bitboard) -> Bitboard; 2] = [shift_east, shift_west]; // Queenside, Kingside
-pub const ROOK_CASTLING_INITIAL_SQUARE: [[Square; 2]; 2] = [[Square::A1, Square::A8], [Square::H1, Square::H8]]; // White first, Queenside first
+pub const ROOK_CASTLING_INITIAL_SQUARE: [[Square; 2]; 2] = [[Square::A1, Square::H1], [Square::A8, Square::H8]]; // White first, Queenside first
 pub const KING_INITIAL_SQUARE: [Square; 2] = [Square::E1, Square::E8]; // White, Black
 pub const CASTLING_BETWEEN_SQUARES: [[Bitboard; 2]; 2] = [[Square::B1.to_bitboard() | Square::C1.to_bitboard() | Square::D1.to_bitboard(),
                                                             Square:: F1.to_bitboard() | Square::G1.to_bitboard()],

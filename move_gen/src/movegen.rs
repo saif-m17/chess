@@ -43,14 +43,7 @@ pub fn get_check_aware_pseudo_legal_moves(board: &Board, color: Color) -> Vec<Mo
     let (checkers, num_checkers) = get_attackers(board, color, king_square);
 
     if num_checkers > 1 {
-        let potential_king_moves = get_pseudo_king_moves(board, color);
-        let mut king_moves: Vec<Move> = Vec::new();
-        for candidate_move in potential_king_moves {
-            let (_candidate_square_attackers, num_attackers) = get_attackers(board, color, candidate_move.to); 
-            if num_attackers == 0 {
-                king_moves.push(candidate_move); 
-            }
-        }
+        let king_moves = get_pseudo_king_moves(board, color);
         moves.extend(king_moves);  
 
     } else if num_checkers == 1 {
@@ -239,7 +232,7 @@ pub fn get_pseudo_pawn_moves(board: &Board, color: Color, valid_destinations: Bi
     moves.extend(pawn_push_moves); 
 
     // Extracting moves from two_step
-    let double_push_moves = extract_pawn_push_moves(two_step, OFFSET_DOUBLE_PUSH[color as usize], color);
+    let double_push_moves = extract_pawn_double_push_moves(two_step, OFFSET_DOUBLE_PUSH[color as usize], color);
     moves.extend(double_push_moves);
 
     // Pawn promotions not captures
@@ -260,7 +253,7 @@ pub fn get_pseudo_pawn_moves(board: &Board, color: Color, valid_destinations: Bi
     moves.extend(pawn_attack_moves);
 
     // Pawn promotions that result in captures
-    let promotion_elligible = pawn_bb & PAWN_DOUBLE_RANK[color as usize];
+    let promotion_elligible = pawn_bb & PAWN_PROMOTION_RANK[color as usize];
     for promote_piece in promo_pieces {
         moves.extend(extract_pawn_promotion_captures(board, promotion_elligible, &pawn_attacks_bbs, 
             Some(promote_piece), enemies_not_allies, color, valid_destinations)); 
@@ -293,6 +286,28 @@ fn extract_pawn_push_moves(bb: Bitboard, offset: i8, color:Color) -> Vec<Move> {
             Pawn,
             color,
             None,
+        ))
+    }
+    moves
+}
+
+fn extract_pawn_double_push_moves(bb: Bitboard, offset: i8, color:Color) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+
+    let mut to_bb = bb;
+
+    while to_bb != 0 {
+        let to_index = to_bb.trailing_zeros() as u64;
+        to_bb.clear_bit(to_index);
+        let from_index = (to_index as i64 - offset as i64) as u64; 
+
+        let to = Square::try_from(to_index).unwrap();
+        let from =  Square::try_from(from_index).unwrap();
+
+        moves.push(Move::new_double_pawn_push(
+            from,
+            to,
+            color,
         ))
     }
     moves
@@ -345,10 +360,10 @@ fn extract_pawn_promotions(bb: Bitboard, promote_piece: Option<Piece>, color: Co
     while to_bb != 0 {
         let to_index = to_bb.trailing_zeros() as u64;
         to_bb.clear_bit(to_index);
-        let from_index = to_index - 8;
+        let from_index = to_index as i8 - OFFSET_SINGLE_PUSH[color as usize];
 
         let to = Square::try_from(to_index).unwrap();
-        let from = Square::try_from(from_index).unwrap();
+        let from = Square::try_from(from_index as u64).unwrap();
 
         moves.push(Move::new_promotion(
             from,
@@ -398,15 +413,17 @@ fn extract_en_passant_moves(board: &Board, color: Color, pawns: Bitboard, valid_
     if let Some(ep_square) = board.en_passant_square { 
         let mut ep_attackers = pawns & ATTACK_TABLES.pawn_attacks[color as usize][ep_square as usize]; 
         let is_ep_valid = valid_destinations.get_bit(ep_square as u64); 
-        while ep_attackers != 0 && is_ep_valid {
-            let ep_from = ep_attackers.trailing_zeros();
-            ep_attackers.clear_bit(ep_from as u64);
-            let from = Square::try_from(ep_from as u64).unwrap();
-            ep_moves.push(Move::new_en_passant(
-                from,
-                ep_square,
-                color,
-            ))
+        if is_ep_valid {
+            while ep_attackers != 0 {
+                let ep_from = ep_attackers.trailing_zeros();
+                ep_attackers.clear_bit(ep_from as u64);
+                let from = Square::try_from(ep_from as u64).unwrap();
+                ep_moves.push(Move::new_en_passant(
+                    from,
+                    ep_square,
+                    color,
+                ))
+            }
         }
     } 
 
@@ -498,6 +515,7 @@ fn get_attackers(board: &Board, color: Color, square:Square) -> (Bitboard, u32) 
     (attackers, attackers.count_ones())
 }
 
+/// Check's whether color's piece on square is attacked. 
 pub fn is_attacked(pieces: [[Bitboard; 6]; 2], square: Square, color: Color) -> bool {
     let mut attackers = 0u64; 
     let enemies_bbs = pieces[color.opposite_color() as usize];
