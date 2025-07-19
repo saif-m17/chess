@@ -83,8 +83,8 @@ fn get_attacks(directions: [Direction; 4], blockers: Bitboard, square: u8) -> Bi
                 Direction::North => relevant_blockers.trailing_zeros(),
                 Direction::NorthEast => relevant_blockers.trailing_zeros(),
                 Direction::NorthWest => relevant_blockers.trailing_zeros(),
-                Direction::West => relevant_blockers.trailing_zeros(),
-                Direction::East => 63 - relevant_blockers.leading_zeros(),
+                Direction::East => relevant_blockers.trailing_zeros(),
+                Direction::West => 63 - relevant_blockers.leading_zeros(),
                 Direction::South => 63 - relevant_blockers.leading_zeros(),
                 Direction::SouthEast => 63 - relevant_blockers.leading_zeros(),
                 Direction::SouthWest => 63 - relevant_blockers.leading_zeros(),
@@ -111,7 +111,15 @@ fn count_relevant_bits(rays: Bitboard) -> usize {
 
 fn write_magics_to_file(rook_magics: Vec<Magic>, bishop_magics: Vec<Magic>) {
     let path = "src/attacktables/magic_tables.rs";
-    let mut file = File::create(path).unwrap();
+    println!("Attempting to create file at: {}", path);
+    let mut file = match File::create(path) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("Failed to create file {}: {}", path, e);
+            eprintln!("Error kind: {:?}", e.kind());
+            return;
+        }
+    };
 
     writeln!(file, "use once_cell::sync::Lazy;").unwrap();
     writeln!(file, "use crate::bitboards::Bitboard;").unwrap();

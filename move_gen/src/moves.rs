@@ -26,7 +26,7 @@ impl Color {
     
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum MoveType {
     Normal,
     Castle { kingside: bool },
@@ -54,7 +54,7 @@ impl Square {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct Move {
     pub from: Square,                    // 0-63 square index
     pub to: Square,                      // 0-63 square index  
