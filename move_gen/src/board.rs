@@ -173,7 +173,7 @@ impl Board {
             self.half_move_clock = 0; 
         } 
         self.past_moves.push(mve);
-        self.side = self.side.opposite_color();  
+        //self.side = self.side.opposite_color();  
     }
 
     pub fn get_en_passant(&self) -> Option<Bitboard> {
@@ -188,9 +188,9 @@ impl Board {
             self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
         }
 
-        if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && self.can_castle_queenside(mve.color) {
+        if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && (self.move_changed_castling_rights[mve.color as usize][0] < 0) {
             self.move_changed_castling_rights[mve.color as usize][0] = self.move_number as i32; 
-        } else if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][1] && self.can_castle_kingside(mve.color) {
+        } else if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][1] && (self.move_changed_castling_rights[mve.color as usize][1] < 0) {
             self.move_changed_castling_rights[mve.color as usize][1] = self.move_number as i32;
         } else if mve.piece == King && self.move_changed_castling_rights[mve.color as usize].iter().any(|&b| b < 0) {
             self.move_changed_castling_rights[mve.color as usize].iter_mut().for_each(|x| {
@@ -462,8 +462,10 @@ impl Board {
         let squares_between_free = CASTLING_BETWEEN_SQUARES[color as usize][0] & self.get_all_pieces() == 0; 
         let squares_cant_attack = CASTLING_SQUARES_CANT_BE_ATTACKED[color as usize][0]; 
         let square_1_attacked = is_attacked(self.pieces, squares_cant_attack[0], color);
-        let square_2_attacked = is_attacked(self.pieces, squares_cant_attack[1], color); 
-        castling_right && !square_1_attacked && !square_2_attacked && squares_between_free
+        let square_2_attacked = is_attacked(self.pieces, squares_cant_attack[1], color);
+        let king_on_initial_squares = self.pieces[color as usize][King as usize].get_bit(KING_INITIAL_SQUARE[color as usize] as u64);
+        let rook_on_initial_square = self.pieces[color as usize][Rook as usize].get_bit(ROOK_CASTLING_INITIAL_SQUARE[color as usize][0] as u64); 
+        castling_right && !square_1_attacked && !square_2_attacked && squares_between_free && king_on_initial_squares && rook_on_initial_square
     }
 
     pub fn can_castle_kingside(&self, color: Color) -> bool {
@@ -472,7 +474,9 @@ impl Board {
         let squares_cant_attack = CASTLING_SQUARES_CANT_BE_ATTACKED[color as usize][1]; 
         let square_1_attacked = is_attacked(self.pieces, squares_cant_attack[0], color);
         let square_2_attacked = is_attacked(self.pieces, squares_cant_attack[1], color); 
-        castling_right && !square_1_attacked && !square_2_attacked && squares_between_free 
+        let king_on_initial_squares = self.pieces[color as usize][King as usize].get_bit(KING_INITIAL_SQUARE[color as usize] as u64);
+        let rook_on_initial_square = self.pieces[color as usize][Rook as usize].get_bit(ROOK_CASTLING_INITIAL_SQUARE[color as usize][1] as u64); 
+        castling_right && !square_1_attacked && !square_2_attacked && squares_between_free && king_on_initial_squares && rook_on_initial_square
     }
 
     pub fn display(&self) {
