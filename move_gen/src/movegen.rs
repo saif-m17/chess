@@ -196,7 +196,7 @@ pub fn get_pseudo_pawn_moves(board: &Board, color: Color, valid_destinations: Bi
     let empty: Bitboard = !all_squares; 
 
     // Pushing pawns one square forward
-    let one_step = FORWARD_SHIFT[color as usize](pawn_bb) & empty & valid_destinations; 
+    let one_step = FORWARD_SHIFT[color as usize](pawn_bb & !PAWN_PROMOTION_RANK[color as usize]) & empty & valid_destinations; 
 
     // Pushing pawns two squares forward
     let two_step = FORWARD_SHIFT[color as usize](one_step & PAWN_DOUBLE_RANK[color as usize]) & empty  & valid_destinations;
