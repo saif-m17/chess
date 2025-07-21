@@ -398,7 +398,7 @@ fn _get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboa
 
 /// Finds pinned pieces on the given board for a given color, assuming checking pieces
 /// located on the given bitboard.
-fn find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
+fn _find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
     let all_pieces = board.get_all_pieces(); 
     let ally_pieces = board.get_pieces(color); 
     let king_bb = board.pieces[color as usize][King as usize];
@@ -535,9 +535,3 @@ pub fn is_in_check(board: &Board, color: Color) -> bool {
     let king_square = Square::try_from(king_index).unwrap(); 
     is_attacked(board.pieces, king_square, color)
 }
-
-/// Possibly - pin-aware move generation. Work in progress if checking for legality after the fact becomes a bottleneck.
-fn _moves_given_checker(board: &Board, color: Color, checkers: Bitboard, pinned_pieces: Bitboard, king_square: Square) {
-    unimplemented!()
-}
-

@@ -1,7 +1,9 @@
+// Script for checking the difference between stockfish moves generated + this versions
+// To use, create directory test_move_data in move_gen + text files my_moves.txt and 
+// stockfish_moves.txt with moves written on each line of the form "{mv}: {# moves from branch}"
+
 use std::collections::HashMap;
 use std::fs;
-
-use chess_core::moves::Move; 
 
 
 fn main() {
