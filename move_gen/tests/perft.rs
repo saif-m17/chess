@@ -6,7 +6,7 @@ use chess_core::utils::{*};
 fn run_perft_test(fen: &str, depth: u64, expected: u64) {
     let mut board = Board::from_fen(fen).unwrap();
     let color = if fen.contains(" w ") { Color::White } else { Color::Black };
-    let result = perft(&mut board, depth, color);
+    let result = divide(&mut board, depth, color);
     assert_eq!(result, expected, "Failed at depth {} for FEN {}", depth, fen);
 }
 
@@ -18,11 +18,6 @@ fn test_starting_position_depth1() {
 #[test]
 fn test_starting_position_depth2() {
     run_perft_test("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 2, 400);
-}
-
-#[test]
-fn test_from_h2h3_depth2() {
-    run_perft_test("rnbqkbnr/pppppppp/8/8/8/7P/PPPPPPP1/RNBQKBNR b KQkq - 0 1", 2, 380);
 }
 
 #[test]
@@ -51,6 +46,11 @@ fn test_starting_position_depth6() {
 }
 
 #[test]
+fn test_starting_position_depth7() {
+    run_perft_test("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 7, 3195901860);
+}
+
+#[test]
 fn test_kiwipete_depth2() {
     run_perft_test("r3kq1r/p1pp1pb1/bn2pQp1/3PN3/1p2P3/2N4p/PPPBBPPP/R3K2R w KQkq - 1 2", 2, 1693);
 }
@@ -61,21 +61,17 @@ fn test_kiwipete_depth5() {
 }
 
 #[test]
-fn test_kiwipete_f6e6_dept1() {
-    run_perft_test("r3kq1r/p1pp1pb1/bn2Q1p1/3PN3/1p2P3/2N4p/PPPBBPPP/R3K2R b KQkq - 0 2", 1, 4);
+fn test_chess_pw_position3() {
+    run_perft_test("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 2, 191);
 }
 
 #[test]
-fn test_kiwipete_after_a2a3() {
-    run_perft_test("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q1p/1PPBBPPP/R3K2R b KQkq - 0 1", 1, 44);
+fn test_chess_pw_position3_b4c4() {
+    run_perft_test("8/2p5/3p4/KP5r/2R2p1k/8/4P1P1/8 b - - 1 1", 1, 15);
 }
 
-#[test]
-fn test_kiwipete_after_queenside_castle() {
-    run_perft_test("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/2KR3R b kq - 1 1", 1, 43);
-}
 
 #[test]
-fn test_kiwipete_after_a2a4() {
-    run_perft_test("r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R b KQkq a3 0 1", 1, 44);
+fn test_chess_pw_position3_2() {
+    run_perft_test("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 6, 11030083);
 }

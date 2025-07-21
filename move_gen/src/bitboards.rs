@@ -151,8 +151,8 @@ pub const fn gen_king_attacks(bb: Bitboard) -> Bitboard {
     let move2 = (bb & !RANK_8 & !FILE_A) << 7; 
     let move3 = (bb & !RANK_8 & !FILE_H) << 9;
     let move4 = (bb & !RANK_1) >> 8;
-    let move5 = (bb & !RANK_1 & !FILE_H) >> 9; 
-    let move6 = (bb & !RANK_1 & !FILE_A) >> 7; 
+    let move5 = (bb & !RANK_1 & !FILE_A) >> 9; 
+    let move6 = (bb & !RANK_1 & !FILE_H) >> 7; 
     let move7 = (bb & !FILE_H) << 1; 
     let move8 = (bb & !FILE_A) >> 1; 
 
