@@ -9,7 +9,7 @@ pub fn moves_into_check(board: &Board, color: Color, mve: &Move) -> bool {
     let new_board_pieces = board.make_shallow_move(mve);
     let king_index = new_board_pieces[color as usize][King as usize].trailing_zeros() as u64; 
     let king_square = Square::try_from(king_index).unwrap();
-    is_attacked(new_board_pieces, king_square, color)
+    is_attacked(&new_board_pieces, king_square, color)
     
 }
 
@@ -473,8 +473,10 @@ fn get_attackers(board: &Board, color: Color, square:Square) -> (Bitboard, u32) 
     (attackers, attackers.count_ones())
 }
 
+
+#[inline(always)]
 /// Check's whether color's piece on square is attacked. 
-pub fn is_attacked(pieces: [[Bitboard; 6]; 2], square: Square, color: Color) -> bool {
+pub fn is_attacked(pieces: &[[Bitboard; 6]; 2], square: Square, color: Color) -> bool {
     let mut attackers = 0u64; 
     let enemies_bbs = pieces[color.opposite_color() as usize];
     let all_pieces = get_all_pieces_from_bbs(pieces); 
@@ -497,7 +499,7 @@ pub fn is_attacked(pieces: [[Bitboard; 6]; 2], square: Square, color: Color) -> 
 }
 
 /// Get all pieces from a list of all piece bitboards rather than board object
-fn get_all_pieces_from_bbs(pieces: [[Bitboard; 6]; 2]) -> Bitboard {
+fn get_all_pieces_from_bbs(pieces: &[[Bitboard; 6]; 2]) -> Bitboard {
     pieces[0][0] | pieces[0][1] | pieces[0][2] | 
     pieces[0][3] | pieces[0][4] | pieces[0][5] |
     pieces[1][0] | pieces[1][1] | pieces[1][2] | 
@@ -505,6 +507,7 @@ fn get_all_pieces_from_bbs(pieces: [[Bitboard; 6]; 2]) -> Bitboard {
 
 }
 
+#[inline(always)]
 /// Returns bitboard of attacks from sliding piece at square, given the magic table to look at
 pub fn get_sliding_piece_attacks(all_pieces: Bitboard, square: Square, magic_table: &[Magic; 64]) -> Bitboard {
     let magic = &magic_table[square as usize];
@@ -534,8 +537,9 @@ fn extract_moves(board: &Board, color: Color, attacks_fixed: Bitboard, from: Squ
     }
 }
 
+#[inline(always)]
 pub fn is_in_check(board: &Board, color: Color) -> bool {
     let king_index = board.pieces[color as usize][King as usize].trailing_zeros() as u64; 
     let king_square = Square::try_from(king_index).unwrap(); 
-    is_attacked(board.pieces, king_square, color)
+    is_attacked(&board.pieces, king_square, color)
 }

@@ -461,8 +461,8 @@ impl Board {
         let castling_right = self.move_changed_castling_rights[color as usize][0] < 0;
         let squares_between_free = CASTLING_BETWEEN_SQUARES[color as usize][0] & self.get_all_pieces() == 0; 
         let squares_cant_attack = CASTLING_SQUARES_CANT_BE_ATTACKED[color as usize][0]; 
-        let square_1_attacked = is_attacked(self.pieces, squares_cant_attack[0], color);
-        let square_2_attacked = is_attacked(self.pieces, squares_cant_attack[1], color);
+        let square_1_attacked = is_attacked(&self.pieces, squares_cant_attack[0], color);
+        let square_2_attacked = is_attacked(&self.pieces, squares_cant_attack[1], color);
         let king_on_initial_squares = self.pieces[color as usize][King as usize].get_bit(KING_INITIAL_SQUARE[color as usize] as u64);
         let rook_on_initial_square = self.pieces[color as usize][Rook as usize].get_bit(ROOK_CASTLING_INITIAL_SQUARE[color as usize][0] as u64); 
         castling_right && !square_1_attacked && !square_2_attacked && squares_between_free && king_on_initial_squares && rook_on_initial_square
@@ -472,8 +472,8 @@ impl Board {
         let castling_right = self.move_changed_castling_rights[color as usize][1] < 0;
         let squares_between_free = CASTLING_BETWEEN_SQUARES[color as usize][1] & self.get_all_pieces() == 0; 
         let squares_cant_attack = CASTLING_SQUARES_CANT_BE_ATTACKED[color as usize][1]; 
-        let square_1_attacked = is_attacked(self.pieces, squares_cant_attack[0], color);
-        let square_2_attacked = is_attacked(self.pieces, squares_cant_attack[1], color); 
+        let square_1_attacked = is_attacked(&self.pieces, squares_cant_attack[0], color);
+        let square_2_attacked = is_attacked(&self.pieces, squares_cant_attack[1], color); 
         let king_on_initial_squares = self.pieces[color as usize][King as usize].get_bit(KING_INITIAL_SQUARE[color as usize] as u64);
         let rook_on_initial_square = self.pieces[color as usize][Rook as usize].get_bit(ROOK_CASTLING_INITIAL_SQUARE[color as usize][1] as u64); 
         castling_right && !square_1_attacked && !square_2_attacked && squares_between_free && king_on_initial_squares && rook_on_initial_square
