@@ -2,6 +2,7 @@ use crate::attacktables::{ATTACK_TABLES, RAYS, ROOK_MAGICS, BISHOP_MAGICS, Magic
 use crate::bitboards::{*};
 use crate::moves::{Color, Piece, Piece::*, Move, Square, Direction};
 use crate::board::Board;
+use crate::utils::MoveList;
 
 /// Returns a boolean check if the move puts the king in check.
 pub fn moves_into_check(board: &Board, color: Color, mve: &Move) -> bool {
@@ -13,7 +14,7 @@ pub fn moves_into_check(board: &Board, color: Color, mve: &Move) -> bool {
 }
 
 /// Returns fully legal moves
-pub fn get_legal_moves(board: &Board, color: Color, moves: &mut Vec<Move>) {
+pub fn get_legal_moves(board: &Board, color: Color, moves: &mut MoveList) {
     get_pseudo_legal_moves(board, color, moves);
     moves.retain(|mve| !moves_into_check(board, color, &mve));
 }
@@ -21,13 +22,13 @@ pub fn get_legal_moves(board: &Board, color: Color, moves: &mut Vec<Move>) {
 /// Returns a boolean indicating whether the move is legal 
 pub fn is_move_legal(board: &Board, color: Color, mve: &Move) -> bool {
     let into_check = moves_into_check(board, color, mve);
-    let mut possible_moves: Vec<Move> = Vec::new(); 
+    let mut possible_moves = MoveList::new();  
     get_check_aware_pseudo_legal_moves(board, color, &mut possible_moves);
     possible_moves.contains(mve) && !into_check 
 }
 
 /// Returns vector of legal moves
-pub fn get_check_aware_pseudo_legal_moves(board: &Board, color: Color, moves: &mut Vec<Move>) {
+pub fn get_check_aware_pseudo_legal_moves(board: &Board, color: Color, moves: &mut MoveList) {
     let king_bb = board.pieces[color as usize][King as usize]; 
     let king_index = king_bb.trailing_zeros() as u64; 
     let king_square = Square::try_from(king_index).unwrap();
@@ -54,7 +55,7 @@ pub fn get_check_aware_pseudo_legal_moves(board: &Board, color: Color, moves: &m
 }
 
 /// Returns vector of all pseudo-legal moves
-pub fn get_pseudo_legal_moves(board: &Board, color: Color, moves: &mut Vec<Move>)  {
+pub fn get_pseudo_legal_moves(board: &Board, color: Color, moves: &mut MoveList)  {
 
     get_pseudo_pawn_moves(board, color, !0u64, moves);
     get_pseudo_knight_moves(board, color, !0u64, moves);
@@ -67,7 +68,7 @@ pub fn get_pseudo_legal_moves(board: &Board, color: Color, moves: &mut Vec<Move>
 }
 
 /// Returns vector of pseudo-legal queen moves
-pub fn get_pseudo_queen_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut Vec<Move>) {
+pub fn get_pseudo_queen_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
     let queen_bb = board.pieces[color as usize][Queen as usize];
     let queen_index = queen_bb.trailing_zeros() as u64;
 
@@ -95,7 +96,7 @@ pub fn get_pseudo_queen_moves(board: &Board, color: Color, valid_destinations: B
 }
 
 /// Returns vector of pseudo-legal rook moves
-pub fn get_pseudo_rook_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut Vec<Move>) {
+pub fn get_pseudo_rook_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
     let mut rook_bb = board.pieces[color as usize][Rook as usize];
 
     let allies = board.get_pieces(color);
@@ -115,7 +116,7 @@ pub fn get_pseudo_rook_moves(board: &Board, color: Color, valid_destinations: Bi
 }
 
 /// Returns vector of pseud-legal bishop moves.
-pub fn get_pseudo_bishop_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut Vec<Move>) {
+pub fn get_pseudo_bishop_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
     let mut bishop_bb = board.pieces[color as usize][Bishop as usize];
 
     let allies = board.get_pieces(color);
@@ -135,7 +136,7 @@ pub fn get_pseudo_bishop_moves(board: &Board, color: Color, valid_destinations: 
 }
 
 /// Returns vector of pseudo-legal king moves
-pub fn get_pseudo_king_moves(board: &Board, color: Color, moves: &mut Vec<Move>) {
+pub fn get_pseudo_king_moves(board: &Board, color: Color, moves: &mut MoveList) {
     let king_bb: Bitboard = board.pieces[color as usize][King as usize];
     let allies = board.get_pieces(color); 
 
@@ -150,7 +151,7 @@ pub fn get_pseudo_king_moves(board: &Board, color: Color, moves: &mut Vec<Move>)
 }
 
 /// Returns castling moves for color (assumes we are not in check).
-pub fn get_castling_moves(board: &Board, color: Color, moves: &mut Vec<Move>) {
+pub fn get_castling_moves(board: &Board, color: Color, moves: &mut MoveList) {
     let king_init = KING_INITIAL_SQUARE[color as usize];
     let queenside_rook_init = ROOK_CASTLING_INITIAL_SQUARE[color as usize][0];
     let kingside_rook_init = ROOK_CASTLING_INITIAL_SQUARE[color as usize][1];
@@ -158,7 +159,9 @@ pub fn get_castling_moves(board: &Board, color: Color, moves: &mut Vec<Move>) {
     let king_bb = board.pieces[color as usize][King as usize];
     let rook_bb = board.pieces[color as usize][Rook as usize];
 
-    if !king_bb.get_bit(king_init as u64) {
+    let checked = is_in_check(board, color); 
+
+    if !king_bb.get_bit(king_init as u64) || checked {
         return; 
     }
 
@@ -173,7 +176,7 @@ pub fn get_castling_moves(board: &Board, color: Color, moves: &mut Vec<Move>) {
 }
 
 /// Returns vector of pseudo-legal knight moves
-pub fn get_pseudo_knight_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut Vec<Move>) {
+pub fn get_pseudo_knight_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
 
     let mut knight_bb: Bitboard = board.pieces[color as usize][Knight as usize];
     let allies = board.get_pieces(color); 
@@ -190,7 +193,7 @@ pub fn get_pseudo_knight_moves(board: &Board, color: Color, valid_destinations: 
 }
 
 /// Returns vector of pseudo-legal pawn moves  
-pub fn get_pseudo_pawn_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut Vec<Move>) {
+pub fn get_pseudo_pawn_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
     let pawn_bb: Bitboard = board.pieces[color as usize][Pawn as usize];
     let all_squares: Bitboard = board.get_all_pieces(); 
     let empty: Bitboard = !all_squares; 
@@ -235,7 +238,7 @@ pub fn get_pseudo_pawn_moves(board: &Board, color: Color, valid_destinations: Bi
 
 }
 
-fn extract_pawn_push_moves(bb: Bitboard, offset: i8, color:Color, moves: &mut Vec<Move>) {
+fn extract_pawn_push_moves(bb: Bitboard, offset: i8, color:Color, moves: &mut MoveList) {
     let mut to_bb = bb;
 
     while to_bb != 0 {
@@ -257,7 +260,7 @@ fn extract_pawn_push_moves(bb: Bitboard, offset: i8, color:Color, moves: &mut Ve
     }
 }
 
-fn extract_pawn_double_push_moves(bb: Bitboard, offset: i8, color:Color, moves: &mut Vec<Move>) {
+fn extract_pawn_double_push_moves(bb: Bitboard, offset: i8, color:Color, moves: &mut MoveList) {
     let mut to_bb = bb;
 
     while to_bb != 0 {
@@ -279,7 +282,7 @@ fn extract_pawn_double_push_moves(bb: Bitboard, offset: i8, color:Color, moves: 
 // TODO FIX THIS TO CONSIDER SQUARES ATTACKED VIA THE OPPOSITE COLOR 
 /// Extracts the pawn attack moves from without considering attacks that lead to promotion (from attack tables)
 fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboard; 64], 
-    enemies_not_allies: Bitboard, color: Color, valid_destinations: Bitboard, moves: &mut Vec<Move>) {
+    enemies_not_allies: Bitboard, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
 
     let attack_targets = enemies_not_allies & valid_destinations;
 
@@ -314,7 +317,7 @@ fn extract_pawn_attack_moves(board: &Board, pawnbb: Bitboard, attacks: &[Bitboar
 }
 
 /// Extracting promotion moves - separate function to avoid branching for efficiency reasons
-fn extract_pawn_promotions(bb: Bitboard, promote_piece: Option<Piece>, color: Color, moves: &mut Vec<Move>) {
+fn extract_pawn_promotions(bb: Bitboard, promote_piece: Option<Piece>, color: Color, moves: &mut MoveList) {
     let mut to_bb = bb;
 
     while to_bb != 0 {
@@ -337,7 +340,7 @@ fn extract_pawn_promotions(bb: Bitboard, promote_piece: Option<Piece>, color: Co
 
 /// Extracts moves where we promote and capture. 
 fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitboard; 64], promote_piece: Option<Piece>, 
-    enemies_not_allies: Bitboard, color: Color, valid_destinations: Bitboard, moves: &mut Vec<Move>)  {
+    enemies_not_allies: Bitboard, color: Color, valid_destinations: Bitboard, moves: &mut MoveList)  {
     let mut from_bb = bb;
 
     while from_bb != 0 {
@@ -365,7 +368,7 @@ fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitbo
 }
 
 /// Extract en passant moves
-fn extract_en_passant_moves(board: &Board, color: Color, pawns: Bitboard, valid_destinations: Bitboard, moves: &mut Vec<Move>) {
+fn extract_en_passant_moves(board: &Board, color: Color, pawns: Bitboard, valid_destinations: Bitboard, moves: &mut MoveList) {
     if let Some(ep_square) = board.en_passant_square { 
         let mut ep_attackers = pawns & ATTACK_TABLES.pawn_attacks[color.opposite_color() as usize][ep_square as usize]; 
         let is_ep_valid = valid_destinations.get_bit(ep_square as u64); 
@@ -474,17 +477,18 @@ fn get_attackers(board: &Board, color: Color, square:Square) -> (Bitboard, u32) 
 pub fn is_attacked(pieces: [[Bitboard; 6]; 2], square: Square, color: Color) -> bool {
     let mut attackers = 0u64; 
     let enemies_bbs = pieces[color.opposite_color() as usize];
+    let all_pieces = get_all_pieces_from_bbs(pieces); 
 
     attackers |= ATTACK_TABLES.pawn_attacks[color as usize][square as usize] & enemies_bbs[Pawn as usize];
     attackers |= ATTACK_TABLES.knight_attacks[square as usize] & enemies_bbs[Knight as usize];
     attackers |= ATTACK_TABLES.king_attacks[square as usize] & enemies_bbs[King as usize];
     attackers |= get_sliding_piece_attacks(
-        get_all_pieces_from_bbs(pieces), 
+        all_pieces, 
         square, 
         &ROOK_MAGICS) 
         & (enemies_bbs[Rook as usize] | enemies_bbs[Queen as usize]);
     attackers |= get_sliding_piece_attacks(
-        get_all_pieces_from_bbs(pieces),
+        all_pieces,
         square, 
         &BISHOP_MAGICS) 
         & (enemies_bbs[Bishop as usize] | enemies_bbs[Queen as usize]);
@@ -511,7 +515,7 @@ pub fn get_sliding_piece_attacks(all_pieces: Bitboard, square: Square, magic_tab
 }
 
 /// Extract moves from an attacks bitboard for new normal move.
-fn extract_moves(board: &Board, color: Color, attacks_fixed: Bitboard, from: Square, piece: Piece, moves: &mut Vec<Move>) {
+fn extract_moves(board: &Board, color: Color, attacks_fixed: Bitboard, from: Square, piece: Piece, moves: &mut MoveList) {
     let mut attacks = attacks_fixed; 
 
     while attacks != 0 {

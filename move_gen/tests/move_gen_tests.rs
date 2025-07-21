@@ -3,6 +3,7 @@ use chess_core::movegen::{*};
 use chess_core::bitboards::{*}; 
 use chess_core::moves::{*, Color::*, Piece::*}; 
 use chess_core::board::Board;
+use chess_core::utils::MoveList;
 
 
 // Fen parsing checks
@@ -90,10 +91,10 @@ fn test_rook_edge_sliding_attacks_gen() {
 #[test]
 fn test_chess_pw_position3_b3b4_moves() {
     let board = Board::from_fen("8/2p5/3p4/KP5r/2R2p1k/8/4P1P1/8 b - - 1 1").unwrap();
-    let mut moves: Vec<Move> = Vec::new();
+    let mut moves = MoveList::new();
     get_legal_moves(&board, Black, &mut moves);
 
-    for mv in &moves {
+    for mv in moves.iter() {
         println!("{mv}"); 
     }
 

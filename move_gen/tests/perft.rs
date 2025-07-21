@@ -5,7 +5,7 @@ use chess_core::utils::{*};
 fn run_perft_test(fen: &str, depth: u64, expected: u64) {
     let mut board = Board::from_fen(fen).unwrap();
     let color = if fen.contains(" w ") { Color::White } else { Color::Black };
-    let result = divide(&mut board, depth, color);
+    let result = perft_shared_memory(&mut board, depth, color);
     assert_eq!(result, expected, "Failed at depth {} for FEN {}", depth, fen);
 }
 

@@ -65,6 +65,19 @@ pub struct Move {
 }
 
 impl Move {
+
+    /// Default move
+    pub fn default() -> Self {
+        Move {
+            from: Square::A1,
+            to: Square::A2,
+            piece: Piece::Pawn,
+            color: Color::White,
+            captured: None,
+            move_type: MoveType::Normal,
+        }
+    }
+
     /// Creates a normal move (most common case)
     pub fn new_normal(from: Square, to: Square, piece: Piece, color: Color, captured: Option<Piece>) -> Self {
         Move {
