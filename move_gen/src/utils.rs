@@ -1,25 +1,8 @@
 use crate::board::{*};
 use crate::movegen::{*};
 use crate::moves::{*}; 
-use crate::bitboards::{*}; 
 
 // Utility functions for testing
-
-fn assert_move_count(board: &Board, expected: usize) {
-    todo!()
-}
-
-fn assert_contains_move(moves: &[Move], expected_move: Move) {
-    todo!()
-}
-
-fn assert_board_state_equal(board1: &Board, board2: &Board) {
-    todo!()
-}
-
-fn generate_random_legal_position() -> Board {
-    todo!()
-}
 
 pub fn perft(board: &mut Board, depth: u64, color: Color) -> u64 {
     let mut move_buffer = Vec::with_capacity(256);
@@ -27,9 +10,7 @@ pub fn perft(board: &mut Board, depth: u64, color: Color) -> u64 {
 }
 
 fn perft_recursive(board: &mut Board, depth: u64, color: Color, move_buffer: &mut Vec<Move>) -> u64 {
-    if depth == 2 { 
-        return 1;
-    }
+    if depth == 0 { return 1; }
     
     move_buffer.clear();
     get_pseudo_legal_moves(board, color, move_buffer);
@@ -59,32 +40,26 @@ fn perft_recursive(board: &mut Board, depth: u64, color: Color, move_buffer: &mu
 
 pub fn divide(board: &mut Board, depth: u64, color: Color) -> u64 {
     let mut move_buffer = Vec::with_capacity(256);
-    get_pseudo_legal_moves(board, color, &mut move_buffer);
-
-    let currently_in_check = is_in_check(board, color);
+    get_legal_moves(board, color, &mut move_buffer);
 
     let mut total_nodes = 0u64;
+    
+    let moves_to_process: Vec<Move> = move_buffer.iter().copied().collect();
 
-    for &mve in &move_buffer {
-        if let MoveType::Castle { .. } = mve.move_type {
-            if currently_in_check {
-                continue;
-            }
-        }
+    for mve in moves_to_process {
+        let mv_string = mve.to_string(); 
+
         board.make_move_in_place(mve);
-
-        if !is_in_check(board, color) {
-            let count = perft_recursive(board, depth - 1, color.opposite_color(), &mut Vec::with_capacity(256));
-            println!("{}: {}", mve.to_string(), count);
-            total_nodes += count;
-        }
-
+        
+        let count = perft(board, depth - 1, color.opposite_color());
         board.unmake_move();
+
+        println!("{}: {}", mv_string, count); 
+        total_nodes += count; 
     }
 
     total_nodes
 }
-
 
 pub fn square_to_string(sq: u8) -> String {
     let file = (sq % 8) as u8;
