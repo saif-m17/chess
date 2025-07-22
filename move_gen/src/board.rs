@@ -135,13 +135,37 @@ impl Board {
     }
 
     /// Gets pieces for color 
-    pub fn get_pieces(&self, color: Color) -> u64 {
+    pub fn get_pieces(&self, color: Color) -> Bitboard {
         self.pieces[color as usize].iter().copied().reduce(|a, b| a | b).unwrap_or(0)
     }
 
     /// Returns position of all pieces
-    pub fn get_all_pieces(&self) -> u64 {
+    pub fn get_all_pieces(&self) -> Bitboard {
         self.get_pieces(Black) | self.get_pieces(White)
+    }
+
+    pub fn get_king_bb(&self, color: Color) -> Bitboard {
+        self.pieces[color as usize][King as usize]
+    }
+
+    pub fn get_queen_bb(&self, color: Color) -> Bitboard {
+        self.pieces[color as usize][Queen as usize]
+    }
+
+    pub fn get_bishop_bb(&self, color: Color) -> Bitboard {
+        self.pieces[color as usize][Bishop as usize]
+    }
+
+    pub fn get_rook_bb(&self, color: Color) -> Bitboard {
+        self.pieces[color as usize][Rook as usize]
+    }
+
+    pub fn get_knight_bb(&self, color: Color) -> Bitboard {
+        self.pieces[color as usize][Knight as usize]
+    }
+
+    pub fn get_pawn_bb(&self, color: Color) -> Bitboard {
+        self.pieces[color as usize][Pawn as usize]
     }
 
     /// Returns piece at a given index if it exists, else None
