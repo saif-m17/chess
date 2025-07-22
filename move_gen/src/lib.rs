@@ -1,10 +1,10 @@
-mod board; 
-mod moves;
-mod movegen; 
-mod attacktables;
-mod game_state;
-mod utils; 
-mod bitboards;
+pub mod board; 
+pub mod moves;
+pub mod movegen; 
+pub mod attacktables;
+pub mod game_state;
+pub mod utils; 
+pub mod bitboards;
 
 pub use board::Board;
 pub use moves::{Move, MoveType};
