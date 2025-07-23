@@ -168,6 +168,10 @@ impl Board {
         self.pieces[color as usize][Pawn as usize]
     }
 
+    pub fn get_color(&self) -> Color {
+        self.side
+    }
+
     /// Returns piece at a given index if it exists, else None
     pub fn get_piece_at(&self, index: u64) -> Option<Piece> {
         self.piece_lookup[index as usize]

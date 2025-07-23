@@ -198,3 +198,8 @@ pub enum FenError {
     InvalidSquare(String),
     InvalidCastling,
 }
+
+#[derive(Debug)]
+pub enum MoveError {
+    IllegalMove,
+}
