@@ -4,6 +4,13 @@ use crate::moves::{Color, Piece, Piece::*, Move, Square, Direction};
 use crate::board::Board;
 use crate::utils::MoveList;
 
+
+/// Returns fully legal moves
+pub fn get_legal_moves(board: &Board, color: Color, moves: &mut MoveList) {
+    get_pseudo_legal_moves(board, color, moves);
+    moves.retain(|mve| !moves_into_check(board, color, &mve));
+}
+
 /// Returns a boolean check if the move puts the king in check.
 pub fn moves_into_check(board: &Board, color: Color, mve: &Move) -> bool {
     let new_board_pieces = board.make_shallow_move(mve);
@@ -12,13 +19,6 @@ pub fn moves_into_check(board: &Board, color: Color, mve: &Move) -> bool {
     is_attacked(&new_board_pieces, king_square, color)
     
 }
-
-/// Returns fully legal moves
-pub fn get_legal_moves(board: &Board, color: Color, moves: &mut MoveList) {
-    get_pseudo_legal_moves(board, color, moves);
-    moves.retain(|mve| !moves_into_check(board, color, &mve));
-}
-
 /// Returns a boolean indicating whether the move is legal 
 pub fn is_move_legal(board: &Board, color: Color, mve: &Move) -> bool {
     let into_check = moves_into_check(board, color, mve);
@@ -27,7 +27,20 @@ pub fn is_move_legal(board: &Board, color: Color, mve: &Move) -> bool {
     possible_moves.contains(mve) && !into_check 
 }
 
-/// Returns vector of legal moves
+/// Checks if any legal moves exist - terminates when the first legal move is found 
+pub fn has_legal_move(board: &mut Board, color: Color, pseudo_legal_moves: &MoveList) -> bool {
+    for mv in pseudo_legal_moves.iter() {
+        board.make_move_in_place(*mv);
+        if !is_in_check(board, color) {
+            board.unmake_move();
+            return true; 
+        }
+        board.unmake_move();
+    }
+    false
+}
+
+/// Returns vector of legal moves (buggy currently)
 pub fn get_check_aware_pseudo_legal_moves(board: &Board, color: Color, moves: &mut MoveList) {
     let king_bb = board.get_king_bb(color);
     let king_index = king_bb.trailing_zeros() as u64; 

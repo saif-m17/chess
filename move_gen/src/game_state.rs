@@ -1,6 +1,6 @@
 use crate::bitboards::{FenError, MoveError};
 use crate::board::Board;
-use crate::movegen::{get_pseudo_legal_moves, is_in_check};
+use crate::movegen::{get_pseudo_legal_moves, is_in_check, has_legal_move};
 use crate::moves::{Color, Color::{*}, Move, Piece::{*}};
 use crate::utils::MoveList; 
 
@@ -38,7 +38,7 @@ impl MoveCache {
     }
 }
 
-struct GameState {
+pub struct GameState {
     board: Board,
     move_number: u64,
     half_move_clock: u64,
@@ -48,6 +48,7 @@ struct GameState {
     past_states: Vec<Board>, // change this to some hashed version
     pseudo_legal_moves: MoveCache,
     legal_moves: MoveCache,
+
 }
 
 impl GameState {
@@ -91,10 +92,24 @@ impl GameState {
         })
     }   
 
-    /// Makes move & checks for legality
+    /// Makes move & checks for legality / outcomes
     pub fn make_move(&mut self, mv: Move) -> Result<(), MoveError>{
         if !self.pseudo_legal_moves.is_cached() {
             get_pseudo_legal_moves(&self.board, self.side, self.pseudo_legal_moves.get_cache());
+        }
+
+        let currently_in_check = is_in_check(&self.board, self.side); 
+        let has_legal_moves = has_legal_move(&mut self.board, self.side, &self.pseudo_legal_moves.get_cache()); 
+
+        if !has_legal_moves {
+            if currently_in_check {
+                self.outcome = Some(Outcome::Checkmate);
+                self.winner = Some(self.side.opposite_color());
+                return Ok(());  
+            } else {
+                self.outcome = Some(Outcome::Draw);
+                return Ok(()); 
+            }
         }
 
         if self.pseudo_legal_moves.get_cache().contains(&mv) {
