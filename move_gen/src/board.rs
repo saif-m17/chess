@@ -171,6 +171,8 @@ impl Board {
     /// Makes given move by updating current board
     pub fn make_move_in_place(&mut self, mve: Move) {
         self.prev_en_passant_squares.push(self.en_passant_square);
+        self.move_number += 1; 
+        
         match mve.move_type {
             MoveType::Normal => self.make_normal_move(&mve),
             MoveType::Castle { kingside } => self.make_castle_move(&mve, kingside),
@@ -365,7 +367,7 @@ impl Board {
             self.move_number -= 1;
             let prev_ep = self.prev_en_passant_squares.pop().flatten();
             self.en_passant_square = prev_ep;
-            
+
         }
     }
 
