@@ -29,7 +29,7 @@ pub fn is_move_legal(board: &Board, color: Color, mve: &Move) -> bool {
 
 /// Returns vector of legal moves
 pub fn get_check_aware_pseudo_legal_moves(board: &Board, color: Color, moves: &mut MoveList) {
-    let king_bb = board.pieces[color as usize][King as usize]; 
+    let king_bb = board.get_king_bb(color);
     let king_index = king_bb.trailing_zeros() as u64; 
     let king_square = Square::try_from(king_index).unwrap();
 
@@ -69,7 +69,7 @@ pub fn get_pseudo_legal_moves(board: &Board, color: Color, moves: &mut MoveList)
 
 /// Returns vector of pseudo-legal queen moves
 pub fn get_pseudo_queen_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
-    let queen_bb = board.pieces[color as usize][Queen as usize];
+    let queen_bb = board.get_queen_bb(color);
     let queen_index = queen_bb.trailing_zeros() as u64;
 
     if queen_index == 64 {
@@ -97,7 +97,7 @@ pub fn get_pseudo_queen_moves(board: &Board, color: Color, valid_destinations: B
 
 /// Returns vector of pseudo-legal rook moves
 pub fn get_pseudo_rook_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
-    let mut rook_bb = board.pieces[color as usize][Rook as usize];
+    let mut rook_bb = board.get_rook_bb(color);
 
     let allies = board.get_pieces(color);
     let enemies = board.get_pieces(color.opposite_color()); 
@@ -117,7 +117,7 @@ pub fn get_pseudo_rook_moves(board: &Board, color: Color, valid_destinations: Bi
 
 /// Returns vector of pseud-legal bishop moves.
 pub fn get_pseudo_bishop_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
-    let mut bishop_bb = board.pieces[color as usize][Bishop as usize];
+    let mut bishop_bb = board.get_bishop_bb(color);
 
     let allies = board.get_pieces(color);
     let enemies = board.get_pieces(color.opposite_color()); 
@@ -137,7 +137,7 @@ pub fn get_pseudo_bishop_moves(board: &Board, color: Color, valid_destinations: 
 
 /// Returns vector of pseudo-legal king moves
 pub fn get_pseudo_king_moves(board: &Board, color: Color, moves: &mut MoveList) {
-    let king_bb: Bitboard = board.pieces[color as usize][King as usize];
+    let king_bb: Bitboard = board.get_king_bb(color);
     let allies = board.get_pieces(color); 
 
     let king_index = king_bb.trailing_zeros() as u64; 
@@ -156,8 +156,8 @@ pub fn get_castling_moves(board: &Board, color: Color, moves: &mut MoveList) {
     let queenside_rook_init = ROOK_CASTLING_INITIAL_SQUARE[color as usize][0];
     let kingside_rook_init = ROOK_CASTLING_INITIAL_SQUARE[color as usize][1];
 
-    let king_bb = board.pieces[color as usize][King as usize];
-    let rook_bb = board.pieces[color as usize][Rook as usize];
+    let king_bb = board.get_king_bb(color);
+    let rook_bb = board.get_rook_bb(color);
 
     let checked = is_in_check(board, color); 
 
@@ -178,7 +178,7 @@ pub fn get_castling_moves(board: &Board, color: Color, moves: &mut MoveList) {
 /// Returns vector of pseudo-legal knight moves
 pub fn get_pseudo_knight_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
 
-    let mut knight_bb: Bitboard = board.pieces[color as usize][Knight as usize];
+    let mut knight_bb: Bitboard = board.get_knight_bb(color);
     let allies = board.get_pieces(color); 
 
     while knight_bb != 0 {
@@ -194,7 +194,7 @@ pub fn get_pseudo_knight_moves(board: &Board, color: Color, valid_destinations: 
 
 /// Returns vector of pseudo-legal pawn moves  
 pub fn get_pseudo_pawn_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
-    let pawn_bb: Bitboard = board.pieces[color as usize][Pawn as usize];
+    let pawn_bb: Bitboard = board.get_pawn_bb(color);
     let all_squares: Bitboard = board.get_all_pieces(); 
     let empty: Bitboard = !all_squares; 
 
@@ -369,7 +369,7 @@ fn extract_pawn_promotion_captures(board: &Board, bb: Bitboard, attacks: &[Bitbo
 
 /// Extract en passant moves
 fn extract_en_passant_moves(board: &Board, color: Color, pawns: Bitboard, valid_destinations: Bitboard, moves: &mut MoveList) {
-    if let Some(ep_square) = board.en_passant_square { 
+    if let Some(ep_square) = board.get_en_passant_square() { 
         let mut ep_attackers = pawns & ATTACK_TABLES.pawn_attacks[color.opposite_color() as usize][ep_square as usize]; 
         let is_ep_valid = valid_destinations.get_bit(ep_square as u64); 
         if is_ep_valid {
@@ -404,13 +404,13 @@ fn _get_directions_bb(square: Square, directions_list: Vec<Direction>) -> Bitboa
 fn _find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
     let all_pieces = board.get_all_pieces(); 
     let ally_pieces = board.get_pieces(color); 
-    let king_bb = board.pieces[color as usize][King as usize];
+    let king_bb = board.get_king_bb(color);
     let king_index = king_bb.trailing_zeros() as usize;  
 
     let mut pinned_pieces = 0u64;
 
     // Pieces pinned by the queen
-    let enemy_queen = board.pieces[color.opposite_color() as usize][Queen as usize];
+    let enemy_queen = board.get_queen_bb(color.opposite_color());
     let enemy_queen_index = enemy_queen.trailing_zeros() as usize;
 
     let squares_between_queen = IN_BETWEEN_SQUARES[king_index][enemy_queen_index]; 
@@ -422,7 +422,7 @@ fn _find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
     }
 
     // Pieces pinned by bishops 
-    let mut enemy_bishops = board.pieces[color.opposite_color() as usize][Bishop as usize];
+    let mut enemy_bishops = board.get_bishop_bb(color.opposite_color());
 
     while enemy_bishops != 0 {
         let bishop_index = enemy_bishops.trailing_zeros() as usize;
@@ -437,7 +437,7 @@ fn _find_pinned_pieces(board: &Board, color: Color) -> Bitboard {
     }
 
     // Pieces pinned by rooks 
-    let mut enemy_rooks = board.pieces[color.opposite_color() as usize][Rook as usize]; 
+    let mut enemy_rooks = board.get_rook_bb(color.opposite_color()); 
 
 
     while enemy_rooks != 0 {
@@ -539,7 +539,7 @@ fn extract_moves(board: &Board, color: Color, attacks_fixed: Bitboard, from: Squ
 
 #[inline(always)]
 pub fn is_in_check(board: &Board, color: Color) -> bool {
-    let king_index = board.pieces[color as usize][King as usize].trailing_zeros() as u64; 
+    let king_index = board.get_king_bb(color).trailing_zeros() as u64; 
     let king_square = Square::try_from(king_index).unwrap(); 
-    is_attacked(&board.pieces, king_square, color)
+    is_attacked(board.get_piece_lists(), king_square, color)
 }

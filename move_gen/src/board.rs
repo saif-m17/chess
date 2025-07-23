@@ -168,11 +168,19 @@ impl Board {
         self.pieces[color as usize][Queen as usize]
     }
 
+    pub fn get_en_passant_square(&self) -> Option<Square> {
+        self.en_passant_square
+    }
+
+    pub fn get_piece_lists(&self) -> &[[Bitboard; 6]; 2] {
+        &self.pieces
+    }
+
     /// Makes given move by updating current board
     pub fn make_move_in_place(&mut self, mve: Move) {
         self.prev_en_passant_squares.push(self.en_passant_square);
         self.move_number += 1; 
-        
+
         match mve.move_type {
             MoveType::Normal => self.make_normal_move(&mve),
             MoveType::Castle { kingside } => self.make_castle_move(&mve, kingside),
@@ -182,10 +190,6 @@ impl Board {
         }
 
         self.past_moves.push(mve); 
-    }
-
-    pub fn get_en_passant(&self) -> Option<Bitboard> {
-        self.en_passant_square.map(Bitboard::from_square)
     }
 
     fn make_normal_move(&mut self, mve: &Move) {
