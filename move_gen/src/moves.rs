@@ -1,6 +1,7 @@
 use num_enum::TryFromPrimitive;
 use std::fmt;
 use crate::utils::{*}; 
+use crate::bitboards::{*}; 
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Piece {
@@ -157,6 +158,129 @@ impl Move {
     /// Check if this move is castling
     pub fn is_castle(&self) -> bool {
         matches!(self.move_type, MoveType::Castle { .. })
+    }
+
+    /// Encode move to action # 
+    pub fn encode_action(&self) -> u32 {
+        let from_index = self.from as u32;
+        let to_index = self.to as u32;
+
+        let moving_piece = match self.piece {
+            Piece::Pawn => 0,
+            Piece::Knight => 1,
+            Piece::Bishop => 2,
+            Piece::Rook => 3,
+            Piece::Queen => 4,
+            Piece::King => 5,
+        };
+
+        let promo_piece = match self.move_type {
+            MoveType::Promotion { piece } => {
+                match piece {
+                    Piece::Knight => 1,
+                    Piece::Bishop => 2,
+                    Piece::Rook => 3,
+                    Piece::Queen => 4,
+                    _ => 0,
+                }
+            },
+            _ => 0,
+        } as u32; 
+
+        let move_type = match self.move_type {
+            MoveType::Promotion { piece: _ } => 0,
+            MoveType::Normal => 0,
+            MoveType::Castle {kingside: _ } => 1,
+            MoveType::EnPassant => 2,
+            MoveType::DoublePawnPush => 3,
+        } as u32;
+
+        let kingside = match self.move_type {
+            MoveType::Castle { kingside } => {
+                if kingside {1} else {0}
+            },
+            _ => 0,
+        }; 
+
+        let captured = match self.captured {
+            Some(Piece::Pawn) => 0,
+            Some(Piece::Knight) => 1,
+            Some(Piece::Bishop) => 2,
+            Some(Piece::Rook) => 3,
+            Some(Piece::Queen) => 4,
+            Some(Piece::King) => 5,
+            _ => 6,
+        }; 
+
+        let color = self.color as u32; 
+
+        (from_index) | (to_index << 6) | (moving_piece << 12) | (promo_piece << 15) | (move_type << 18) | (kingside << 20) |
+        (captured << 21) | (color << 24) 
+
+    }
+
+    /// Decode action # to move. 
+    pub fn decode_action(action: u32) -> Self {
+        let from_index = action & FROM_MASK;
+        let to_index = action & TO_MASK;
+
+        let from = Square::try_from(from_index as u64).unwrap();
+        let to = Square::try_from(to_index as u64).unwrap();
+
+        let moving_piece = match action & PIECE_MASK {
+            0 => Some(Piece::Pawn),
+            1 => Some(Piece::Knight),
+            2 => Some(Piece::Bishop),
+            3 => Some(Piece::Rook),
+            4 => Some(Piece::Queen),
+            _ => Some(Piece::King),
+        }; 
+
+        let promo_piece: Option<Piece> = match action & PROMO_PIECE_MASK {
+            1 => Some(Piece::Knight),
+            2 => Some(Piece::Bishop),
+            3 => Some(Piece::Rook),
+            4 => Some(Piece::Queen),
+            _ => None, 
+        }; 
+
+        let kingside_bool = match action & KINGSIDE_MASK {
+            1 => true,
+            _ => false,
+        }; 
+
+        let move_type: MoveType = match action & MOVE_TYPE_MASK {
+            0 => {
+                if promo_piece.is_some() { MoveType::Promotion { piece: promo_piece.unwrap() }} else { MoveType::Normal}
+            },
+            1 => MoveType::Castle {kingside: kingside_bool},
+            2 => MoveType::EnPassant,
+            _ => MoveType::DoublePawnPush,
+        }; 
+
+        let captured = match action & CAPTURED_MASK {
+            0 => Some(Piece::Pawn),
+            1 => Some(Piece::Knight),
+            2 => Some(Piece::Bishop),
+            3 => Some(Piece::Rook),
+            4 => Some(Piece::Queen),
+            5 => Some(Piece::King),
+            _ => None,
+        }; 
+
+        let color = match action & COLOR_MASK {
+            0 => Color::White,
+            _ => Color::Black,
+        }; 
+
+        match move_type {
+            MoveType::Normal => Move::new_normal(from, to, moving_piece.unwrap(), color, captured),
+            MoveType::Castle { kingside } => Move::new_castle(color, kingside),
+            MoveType::DoublePawnPush => Move::new_double_pawn_push(from, to, color),
+            MoveType::EnPassant => Move::new_en_passant(from, to, color),
+            MoveType::Promotion { piece } => Move::new_promotion(from, to, color, captured, piece)
+        }
+
     }
 
 }
