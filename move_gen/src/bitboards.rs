@@ -1,5 +1,9 @@
 use crate::moves::{Square, Direction}; 
 use crate::attacktables::RAYS; 
+use once_cell::sync::Lazy;
+use rand::{Rng, SeedableRng};
+use rand::rngs::StdRng;
+
 
 // Rank constants
 pub const RANK_1: u64 = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_11111111;
@@ -203,3 +207,39 @@ pub enum FenError {
 pub enum MoveError {
     IllegalMove,
 }
+
+// Zobrist Constants
+static ZOBRIST_TABLE: Lazy<[[u64; 64]; 6]> = Lazy::new(|| {
+    let mut rng = StdRng::seed_from_u64(0x123456789ABCDEF);
+    let mut table = [[0u64; 64]; 6]; 
+    for piece in 0..6 {
+        for square in 0..64 {
+            table[piece][square] = rng.r#gen::<u64>(); 
+        }
+    }
+    table
+});
+
+static ZOBRIST_IS_BLACK: Lazy<u64> = Lazy::new(|| {
+    let mut rng = StdRng::seed_from_u64(0x3249108374223482);
+    rng.r#gen::<u64>()
+});
+
+static ZOBRIST_CASTLING: Lazy<[u64; 16]> = Lazy::new(|| {
+    let mut rng = StdRng::seed_from_u64(0x7172002921998111);
+    let mut arr = [0u64; 16];
+    for i in 0..16 {
+        arr[i] = rng.r#gen::<u64>(); 
+    }
+    arr
+});
+
+static ZOBRIST_EN_PASSANT: Lazy<[u64; 8]> = Lazy::new(|| {
+    let mut rng = StdRng::seed_from_u64(0x9387829398584992);
+    let mut arr = [0u64; 8];
+    for i in 0..16 {
+        arr[i] = rng.r#gen::<u64>(); 
+    }
+    arr
+
+}); 
