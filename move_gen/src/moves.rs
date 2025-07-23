@@ -10,7 +10,6 @@ pub enum Piece {
     Rook,
     Queen,
     King,
-    Empty,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -159,6 +158,7 @@ impl Move {
     pub fn is_castle(&self) -> bool {
         matches!(self.move_type, MoveType::Castle { .. })
     }
+
 }
 
 impl fmt::Display for Move {
@@ -186,17 +186,6 @@ impl fmt::Display for Move {
 pub enum Direction {
     North = 0, South, East, West,
     NorthEast, NorthWest, SouthEast, SouthWest,
-}
-
-pub fn rook_directions() -> &'static [Direction] {
-    &[Direction::North, Direction::South, Direction::East, Direction::West]
-}
-
-pub fn bishop_directions() -> &'static [Direction] {
-    &[
-        Direction::NorthEast, Direction::NorthWest,
-        Direction::SouthEast, Direction::SouthWest,
-    ]
 }
 
 pub const DIRECTION_COORDINATES: [(i8, i8); 8] = [

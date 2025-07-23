@@ -25,6 +25,16 @@ pub const FILE_H: u64 = 0b10000000_10000000_10000000_10000000_10000000_10000000_
 pub const EMPTY: u64 = 0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
 pub const FULL: u64 = 0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111;
 
+// u32 masks for action decoding
+pub const FROM_MASK: u32 = 0b111111;
+pub const TO_MASK: u32 = 0b111111_000000;
+pub const PIECE_MASK: u32 = 0b111_000000_000000;  
+pub const PROMO_PIECE_MASK: u32 = 0b111_000_000000_000000;
+pub const MOVE_TYPE_MASK: u32 = 0b11_000_000_000000_000000;
+pub const KINGSIDE_MASK: u32 = 0b1_00_000_000_000000_000000;
+pub const CAPTURED_MASK: u32 = 0b111_0_00_000_000_000000_000000;
+pub const COLOR_MASK: u32 = 0b1_000_0_00_000_000_000000_000000;
+
 // Some helpful functions for manipulating bitboards
 pub type Bitboard = u64; 
 
@@ -188,4 +198,3 @@ pub enum FenError {
     InvalidSquare(String),
     InvalidCastling,
 }
-
