@@ -29,12 +29,6 @@ fn test_valid_startpos_fen() {
     // Check en passant
     assert_eq!(board.en_passant_square, None);
 
-    // Check side
-    assert_eq!(board.side, White);
-
-    // Check move number and half-move clock
-    assert_eq!(board.move_number, 1);
-    assert_eq!(board.half_move_clock, 0);
 }
 
 #[test]
@@ -58,9 +52,8 @@ fn test_valid_custom_fen_with_en_passant() {
     let board = Board::from_fen(fen).unwrap();
 
     assert_eq!(board.en_passant_square, Some(Square::try_from(43).unwrap())); // d6 -> index 35
-    assert_eq!(board.side, White);
     assert_eq!(board.move_number, 2);
-    assert_eq!(board.half_move_clock, 0);
+    
 }
 
 #[test]

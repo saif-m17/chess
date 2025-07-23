@@ -11,8 +11,6 @@ pub struct Board {
     pub prev_en_passant_squares: Vec<Option<Square>>,
     pub move_changed_castling_rights: [[i32; 2]; 2],
     pub move_number: u64,
-    pub half_move_clock: u64,
-    pub side: Color,
 }
 
 impl Board {
@@ -53,12 +51,8 @@ impl Board {
 
         let move_changed_castling_rights = [[-1, -1], [-1, -1]];
 
-        let move_number = 0u64;
-
-        let half_move_clock = 0u64;   
-
         Board { pieces, piece_lookup, past_moves, en_passant_square:None, 
-            prev_en_passant_squares, move_changed_castling_rights, move_number, half_move_clock, side:White }
+            prev_en_passant_squares, move_changed_castling_rights, move_number:0u64 }
     }
 
     /// Turns a FEN string into a new board object
@@ -74,12 +68,6 @@ impl Board {
             prev_en_passant_squares: Vec::new(),
             move_changed_castling_rights: [[1; 2]; 2], // some positive number to default to false
             move_number: parts[5].parse().map_err(|_| FenError::InvalidFormat("Move number incorrect.".to_string()))?,
-            half_move_clock: parts[4].parse().map_err(|_| FenError::InvalidFormat("half number clock incorrect.".to_string()))?,
-            side: match parts[1] {
-                "w" => White,
-                "b" => Black,
-                _ => return Err(FenError::InvalidFormat("Side incorrect".to_string())),
-            },
         }; 
 
         let piece_rep = parts[0];
@@ -168,10 +156,6 @@ impl Board {
         self.pieces[color as usize][Pawn as usize]
     }
 
-    pub fn get_color(&self) -> Color {
-        self.side
-    }
-
     /// Returns piece at a given index if it exists, else None
     pub fn get_piece_at(&self, index: u64) -> Option<Piece> {
         self.piece_lookup[index as usize]
@@ -186,7 +170,6 @@ impl Board {
 
     /// Makes given move by updating current board
     pub fn make_move_in_place(&mut self, mve: Move) {
-        self.move_number += 1;
         self.prev_en_passant_squares.push(self.en_passant_square);
         match mve.move_type {
             MoveType::Normal => self.make_normal_move(&mve),
@@ -195,13 +178,8 @@ impl Board {
             MoveType::DoublePawnPush => self.make_double_push_move(&mve),
             MoveType::Promotion { piece } => self.make_promotion_move(&mve, piece),
         }
-        if mve.piece != Pawn && !mve.is_capture() {
-            self.half_move_clock += 1; 
-        } else {
-            self.half_move_clock = 0; 
-        } 
-        self.past_moves.push(mve);
-        self.side = self.side.opposite_color();  
+
+        self.past_moves.push(mve); 
     }
 
     pub fn get_en_passant(&self) -> Option<Bitboard> {
@@ -387,7 +365,7 @@ impl Board {
             self.move_number -= 1;
             let prev_ep = self.prev_en_passant_squares.pop().flatten();
             self.en_passant_square = prev_ep;
-            self.side = self.side.opposite_color();
+            
         }
     }
 
