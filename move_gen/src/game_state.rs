@@ -193,7 +193,28 @@ impl GameState {
     }
 
     pub fn unmake_move(&mut self) {
-        todo!();
+        let last_move = *self.board.get_last_move().unwrap(); 
+        let old_castling = self.board.enumerate_castling();
+        let old_ep_square = self.board.get_en_passant_square(); 
+        self.board.unmake_move();
+
+        let new_castling = self.board.enumerate_castling();
+        let new_ep_square = self.board.get_en_passant_square();
+
+        self.update_zobrist(&last_move, old_castling, &old_ep_square, new_castling, &new_ep_square);
+        self.past_states.entry(self.current_hash).and_modify(|count| *count -= 1); 
+
+        self.legal_moves.get_cache().clear();
+        self.legal_moves.set_cached(false);
+        self.pseudo_legal_moves.get_cache().clear();
+        self.pseudo_legal_moves.set_cached(false);
+
+        if last_move.piece != Pawn && !last_move.is_capture() {
+            self.half_move_clock -= 1; 
+        }
+
+        self.side = self.side.opposite_color();
+
     }
 
     pub fn get_gamestate_pseudo_legal_moves(&mut self) -> &MoveList {

@@ -549,4 +549,8 @@ impl Board {
 
     }
 
+    pub fn get_last_move(&self) -> Option<&Move> {
+        self.past_moves.get(self.move_number as usize - 1)
+    }
+
 }
