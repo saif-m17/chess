@@ -113,6 +113,7 @@ impl GameState {
         let old_castling = self.board.enumerate_castling();
         let old_en_passant_square = self.board.get_en_passant_square(); 
 
+        // Checkmate or stalemate
         if self.legal_moves.is_cached() {
             if self.legal_moves.get_cache().len() == 0 {
                 if currently_in_check {
@@ -131,8 +132,10 @@ impl GameState {
                 return Err(MoveError::IllegalMove)
             }
 
-        } else if !self.pseudo_legal_moves.is_cached() {
-            get_pseudo_legal_moves(&self.board, self.side, self.pseudo_legal_moves.get_cache());
+        } else {
+            if !self.pseudo_legal_moves.is_cached() {
+                get_pseudo_legal_moves(&self.board, self.side, self.pseudo_legal_moves.get_cache());
+            }
 
             let has_legal_moves = has_legal_move(&mut self.board, self.side, &self.pseudo_legal_moves.get_cache()); 
 
@@ -147,7 +150,7 @@ impl GameState {
                     return Ok(()); 
                 }
             }
-    
+
             if self.pseudo_legal_moves.get_cache().contains(&mv) {
                 self.board.make_move_in_place(mv);
                 if is_in_check(&self.board, self.side) {
@@ -157,6 +160,7 @@ impl GameState {
             } else {
                 return Err(MoveError::IllegalMove)
             }
+
         }
 
         self.move_number += 1;
