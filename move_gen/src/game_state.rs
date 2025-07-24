@@ -109,65 +109,90 @@ impl GameState {
 
     /// Makes move & checks for legality / outcomes
     pub fn make_move(&mut self, mv: Move) -> Result<(), MoveError>{
-        if !self.pseudo_legal_moves.is_cached() {
-            get_pseudo_legal_moves(&self.board, self.side, self.pseudo_legal_moves.get_cache());
-        }
-
         let currently_in_check = is_in_check(&self.board, self.side); 
-        let has_legal_moves = has_legal_move(&mut self.board, self.side, &self.pseudo_legal_moves.get_cache()); 
-
-        // Checking for checkmate or stalemate
-        if !has_legal_moves {
-            if currently_in_check {
-                self.outcome = Some(Outcome::Checkmate);
-                self.winner = Some(self.side.opposite_color());
-                return Ok(());  
-            } else {
-                self.outcome = Some(Outcome::Draw);
-                return Ok(()); 
-            }
-        }
-
         let old_castling = self.board.enumerate_castling();
         let old_en_passant_square = self.board.get_en_passant_square(); 
 
-        if self.pseudo_legal_moves.get_cache().contains(&mv) {
-            self.board.make_move_in_place(mv);
-            if is_in_check(&self.board, self.side) {
-                self.board.unmake_move();
+        if self.legal_moves.is_cached() {
+            if self.legal_moves.get_cache().len() == 0 {
+                if currently_in_check {
+                    self.outcome = Some(Outcome::Checkmate);
+                    self.winner = Some(self.side.opposite_color());
+                    return Ok(());  
+                } else {
+                    self.outcome = Some(Outcome::Draw);
+                    return Ok(()); 
+                }
+            }
+
+            if self.legal_moves.get_cache().contains(&mv) {
+                self.board.make_move_in_place(mv);
+            } else {
                 return Err(MoveError::IllegalMove)
             }
 
-            self.move_number += 1;
-            if mv.piece != Pawn && !mv.is_capture() {
-                self.half_move_clock += 1; 
-            } else {
-                self.half_move_clock = 0; 
-            } 
+        } else if !self.pseudo_legal_moves.is_cached() {
+            get_pseudo_legal_moves(&self.board, self.side, self.pseudo_legal_moves.get_cache());
 
-            self.pseudo_legal_moves.get_cache().clear();
-            self.pseudo_legal_moves.set_cached(false);
-            self.side = self.side.opposite_color(); 
+            let has_legal_moves = has_legal_move(&mut self.board, self.side, &self.pseudo_legal_moves.get_cache()); 
 
-            // Checking for threefold repition or 50 move rule
-            let new_castling = self.board.enumerate_castling(); 
-            let new_ep_square = &self.board.get_en_passant_square(); 
-            self.update_zobrist(&mv, old_castling, &old_en_passant_square, new_castling, new_ep_square); 
-            self.past_states.entry(self.current_hash).and_modify(|count| *count += 1).or_insert(1); 
-
-            if self.past_states[&self.current_hash] >= 3 || self.half_move_clock >= 50 {
-                self.outcome = Some(Outcome::Draw); 
-                return Ok(()); 
+            // Checking for checkmate or stalemate
+            if !has_legal_moves {
+                if currently_in_check {
+                    self.outcome = Some(Outcome::Checkmate);
+                    self.winner = Some(self.side.opposite_color());
+                    return Ok(());  
+                } else {
+                    self.outcome = Some(Outcome::Draw);
+                    return Ok(()); 
+                }
             }
-
-            Ok(())
-        } else {
-            Err(MoveError::IllegalMove)
+    
+            if self.pseudo_legal_moves.get_cache().contains(&mv) {
+                self.board.make_move_in_place(mv);
+                if is_in_check(&self.board, self.side) {
+                    self.board.unmake_move();
+                    return Err(MoveError::IllegalMove)
+                }
+            } else {
+                return Err(MoveError::IllegalMove)
+            }
         }
+
+        self.move_number += 1;
+        if mv.piece != Pawn && !mv.is_capture() {
+            self.half_move_clock += 1; 
+        } else {
+            self.half_move_clock = 0; 
+        } 
+
+        self.legal_moves.get_cache().clear();
+        self.legal_moves.set_cached(false);
+        self.pseudo_legal_moves.get_cache().clear();
+        self.pseudo_legal_moves.set_cached(false);
+
+        self.side = self.side.opposite_color(); 
+
+        // Checking for threefold repition or 50 move rule
+        let new_castling = self.board.enumerate_castling(); 
+        let new_ep_square = &self.board.get_en_passant_square(); 
+        self.update_zobrist(&mv, old_castling, &old_en_passant_square, new_castling, new_ep_square); 
+        self.past_states.entry(self.current_hash).and_modify(|count| *count += 1).or_insert(1); 
+
+        if self.past_states[&self.current_hash] >= 3 || self.half_move_clock >= 50 {
+            self.outcome = Some(Outcome::Draw); 
+            return Ok(()); 
+        }
+
+        Ok(())
 
     }
 
-    pub fn get_pseudo_legal_moves(&mut self) -> &MoveList {
+    pub fn unmake_move(&mut self) {
+        todo!();
+    }
+
+    pub fn get_gamestate_pseudo_legal_moves(&mut self) -> &MoveList {
         if self.pseudo_legal_moves.is_cached() {
             self.pseudo_legal_moves.get_cache()
         } else {
@@ -175,6 +200,27 @@ impl GameState {
             get_pseudo_legal_moves(&self.board, self.side, &mut self.pseudo_legal_moves.get_cache());
             self.pseudo_legal_moves.set_cached(true);
             self.pseudo_legal_moves.get_cache()
+        }
+    }
+
+    pub fn get_gamestate_legal_moves(&mut self) -> &MoveList {
+        if self.legal_moves.is_cached() {
+            self.legal_moves.get_cache()
+        } else if self.pseudo_legal_moves.is_cached() {
+            self.legal_moves.clear_cache();
+            for mv in self.pseudo_legal_moves.get_cache().iter() {
+                self.legal_moves.get_cache().push(*mv); 
+            }
+            self.legal_moves.set_cached(true);
+            self.legal_moves.get_cache() 
+        } else {
+            get_pseudo_legal_moves(&self.board, self.side, &mut self.pseudo_legal_moves.get_cache());
+            self.pseudo_legal_moves.set_cached(true);
+            for mv in self.pseudo_legal_moves.get_cache().iter() {
+                self.legal_moves.get_cache().push(*mv); 
+            }
+            self.legal_moves.set_cached(true);
+            self.legal_moves.get_cache() 
         }
     }
 
