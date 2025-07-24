@@ -209,23 +209,26 @@ pub enum MoveError {
 }
 
 // Zobrist Constants
-static ZOBRIST_TABLE: Lazy<[[u64; 64]; 6]> = Lazy::new(|| {
+pub static ZOBRIST_TABLE: Lazy<[[[u64; 64]; 6]; 2]> = Lazy::new(|| {
     let mut rng = StdRng::seed_from_u64(0x123456789ABCDEF);
-    let mut table = [[0u64; 64]; 6]; 
-    for piece in 0..6 {
-        for square in 0..64 {
-            table[piece][square] = rng.r#gen::<u64>(); 
+    let mut table = [[[0u64; 64]; 6]; 2]; 
+    for color in 0..2 {
+        for piece in 0..6 {
+            for square in 0..64 {
+                table[color][piece][square] = rng.r#gen::<u64>(); 
+            }
         }
     }
     table
 });
 
-static ZOBRIST_IS_BLACK: Lazy<u64> = Lazy::new(|| {
+pub static ZOBRIST_IS_BLACK: Lazy<[u64; 2]> = Lazy::new(|| {
     let mut rng = StdRng::seed_from_u64(0x3249108374223482);
-    rng.r#gen::<u64>()
+    let black_num = rng.r#gen::<u64>();
+    [0u64, black_num]
 });
 
-static ZOBRIST_CASTLING: Lazy<[u64; 16]> = Lazy::new(|| {
+pub static ZOBRIST_CASTLING: Lazy<[u64; 16]> = Lazy::new(|| {
     let mut rng = StdRng::seed_from_u64(0x7172002921998111);
     let mut arr = [0u64; 16];
     for i in 0..16 {
@@ -234,7 +237,7 @@ static ZOBRIST_CASTLING: Lazy<[u64; 16]> = Lazy::new(|| {
     arr
 });
 
-static ZOBRIST_EN_PASSANT: Lazy<[u64; 8]> = Lazy::new(|| {
+pub static ZOBRIST_EN_PASSANT: Lazy<[u64; 8]> = Lazy::new(|| {
     let mut rng = StdRng::seed_from_u64(0x9387829398584992);
     let mut arr = [0u64; 8];
     for i in 0..16 {
