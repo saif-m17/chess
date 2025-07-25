@@ -113,8 +113,8 @@ impl GameState {
         let old_castling = self.board.enumerate_castling();
         let old_en_passant_square = self.board.get_en_passant_square(); 
 
-        // Checkmate or stalemate
         if self.legal_moves.is_cached() {
+            // Checkmate or stalemate
             if self.legal_moves.get_cache().len() == 0 {
                 if currently_in_check {
                     self.outcome = Some(Outcome::Checkmate);
