@@ -132,6 +132,9 @@ impl GameState {
 
     /// Makes move & checks for legality / outcomes
     pub fn make_move(&mut self, mv: Move) -> Result<(), MoveError>{
+        if self.get_outcome().is_some() {
+            return Err(MoveError::IllegalMove); 
+        }
         let old_castling = self.board.enumerate_castling();
         let old_en_passant_square = self.board.get_en_passant_square(); 
 
