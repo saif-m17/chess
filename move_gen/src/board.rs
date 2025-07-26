@@ -540,9 +540,9 @@ impl Board {
 
     /// Returns 0 to 15 value for corresponding to castling rights combo for zobrist hashing
     pub fn enumerate_castling(&self) -> u8 {
-        let white_queenside = if self.move_changed_castling_rights[White as usize][0] < 0 { 1u8 << 4 } else { 0u8 }; 
-        let white_kingside = if self.move_changed_castling_rights[White as usize][1] < 0 {1u8 << 3} else { 0u8 };
-        let black_queenside = if self.move_changed_castling_rights[Black as usize][0] < 0 { 1u8 << 2 } else { 0u8 }; 
+        let white_queenside = if self.move_changed_castling_rights[White as usize][0] < 0 { 1u8 << 3 } else { 0u8 }; 
+        let white_kingside = if self.move_changed_castling_rights[White as usize][1] < 0 {1u8 << 2} else { 0u8 };
+        let black_queenside = if self.move_changed_castling_rights[Black as usize][0] < 0 { 1u8 << 1 } else { 0u8 }; 
         let black_kingside = if self.move_changed_castling_rights[Black as usize][1] < 0 {1u8 } else { 0u8 };
 
         white_queenside | white_kingside | black_queenside | black_kingside

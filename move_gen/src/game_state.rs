@@ -1,11 +1,12 @@
 use crate::bitboards::{*};
 use crate::board::Board;
-use crate::movegen::{get_pseudo_legal_moves, has_legal_move, is_in_check};
+use crate::movegen::{get_pseudo_legal_moves, has_legal_move, is_in_check, moves_into_check};
 use crate::moves::{Color, Color::{*}, Move, Piece::{*}, Square};
 use crate::utils::MoveList;
 use std::collections::HashMap; 
 
-enum Outcome {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Outcome {
     Draw = 0,
     Checkmate = 1,
 }
@@ -104,27 +105,37 @@ impl GameState {
         game_state.past_states.entry(hash).and_modify(|count| *count += 1).or_insert(1); 
         game_state.current_hash = hash; 
 
+        get_pseudo_legal_moves(&game_state.board, game_state.side, &mut game_state.pseudo_legal_moves.get_cache());
+        game_state.pseudo_legal_moves.set_cached(true);
+        for mv in game_state.pseudo_legal_moves.get_cache().iter() {
+            if !moves_into_check(&game_state.board, game_state.side, mv) {
+                game_state.legal_moves.get_cache().push(*mv); 
+            }
+        }
+        game_state.legal_moves.set_cached(true);
+
+        if game_state.legal_moves.get_cache().len() == 0 {
+            if is_in_check(&game_state.board, game_state.side) {
+                game_state.outcome = Some(Outcome::Checkmate);
+                game_state.winner = Some(game_state.side.opposite_color());
+            } else {
+                game_state.outcome = Some(Outcome::Draw);
+            }
+        }
+
         Ok(game_state)
     }   
 
+    pub fn get_outcome(&self) -> Option<Outcome> {
+        self.outcome 
+    }
+
     /// Makes move & checks for legality / outcomes
     pub fn make_move(&mut self, mv: Move) -> Result<(), MoveError>{
-        let currently_in_check = is_in_check(&self.board, self.side); 
         let old_castling = self.board.enumerate_castling();
         let old_en_passant_square = self.board.get_en_passant_square(); 
 
         if self.legal_moves.is_cached() {
-            // Checkmate or stalemate
-            if self.legal_moves.get_cache().len() == 0 {
-                if currently_in_check {
-                    self.outcome = Some(Outcome::Checkmate);
-                    self.winner = Some(self.side.opposite_color());
-                    return Ok(());  
-                } else {
-                    self.outcome = Some(Outcome::Draw);
-                    return Ok(()); 
-                }
-            }
 
             if self.legal_moves.get_cache().contains(&mv) {
                 self.board.make_move_in_place(mv);
@@ -135,20 +146,6 @@ impl GameState {
         } else {
             if !self.pseudo_legal_moves.is_cached() {
                 get_pseudo_legal_moves(&self.board, self.side, self.pseudo_legal_moves.get_cache());
-            }
-
-            let has_legal_moves = has_legal_move(&mut self.board, self.side, &self.pseudo_legal_moves.get_cache()); 
-
-            // Checking for checkmate or stalemate
-            if !has_legal_moves {
-                if currently_in_check {
-                    self.outcome = Some(Outcome::Checkmate);
-                    self.winner = Some(self.side.opposite_color());
-                    return Ok(());  
-                } else {
-                    self.outcome = Some(Outcome::Draw);
-                    return Ok(()); 
-                }
             }
 
             if self.pseudo_legal_moves.get_cache().contains(&mv) {
@@ -173,9 +170,24 @@ impl GameState {
         self.legal_moves.get_cache().clear();
         self.legal_moves.set_cached(false);
         self.pseudo_legal_moves.get_cache().clear();
-        self.pseudo_legal_moves.set_cached(false);
 
         self.side = self.side.opposite_color(); 
+
+        // Checking for checkmate
+        get_pseudo_legal_moves(&self.board, self.side, &mut self.pseudo_legal_moves.get_cache());
+
+        let has_legal_moves = has_legal_move(&mut self.board, self.side, &self.pseudo_legal_moves.get_cache()); 
+
+        if !has_legal_moves {
+            if is_in_check(&self.board, self.side) {
+                self.outcome = Some(Outcome::Checkmate);
+                self.winner = Some(self.side.opposite_color());
+                return Ok(());  
+            } else {
+                self.outcome = Some(Outcome::Draw);
+                return Ok(()); 
+            }
+        }
 
         // Checking for threefold repition or 50 move rule
         let new_castling = self.board.enumerate_castling(); 
@@ -215,6 +227,9 @@ impl GameState {
 
         self.side = self.side.opposite_color();
 
+        self.outcome = None;
+        self.winner = None;
+
     }
 
     pub fn get_gamestate_pseudo_legal_moves(&mut self) -> &MoveList {
@@ -242,7 +257,9 @@ impl GameState {
             get_pseudo_legal_moves(&self.board, self.side, &mut self.pseudo_legal_moves.get_cache());
             self.pseudo_legal_moves.set_cached(true);
             for mv in self.pseudo_legal_moves.get_cache().iter() {
-                self.legal_moves.get_cache().push(*mv); 
+                if !moves_into_check(&self.board, self.side, mv) {
+                    self.legal_moves.get_cache().push(*mv); 
+                }
             }
             self.legal_moves.set_cached(true);
             self.legal_moves.get_cache() 
@@ -269,7 +286,8 @@ impl GameState {
         let en_passant_square = self.board.get_en_passant_square(); 
         if en_passant_square.is_some() {
             if self.board.get_pawn_bb(self.side.opposite_color()) & en_passant_square.unwrap().to_bitboard() != 0 {
-                zobrist_hash ^= ZOBRIST_EN_PASSANT[en_passant_square.unwrap() as usize % 8]
+                let file =(en_passant_square.unwrap() as usize) % 8; 
+                zobrist_hash ^= ZOBRIST_EN_PASSANT[file]
             }
         }
 
@@ -299,6 +317,14 @@ impl GameState {
         }
 
         self.current_hash ^= ZOBRIST_IS_BLACK[Black as usize]; 
+    }
+
+    pub fn display_board(&self) {
+        self.board.display()
+    }
+
+    pub fn get_winner(&self) -> Option<Color> {
+        self.winner
     }
 
 }
