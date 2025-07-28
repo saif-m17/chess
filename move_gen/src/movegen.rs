@@ -80,6 +80,21 @@ pub fn get_pseudo_legal_moves(board: &Board, color: Color, moves: &mut MoveList)
 
 }
 
+/// Returns only moves that result in capture of enemy pieces.
+pub fn get_captures(board: &Board, color: Color, moves: &mut MoveList) {
+    let mut valid_destinations = board.get_pieces(color.opposite_color());
+    valid_destinations ^= board.get_king_bb(color.opposite_color()); 
+
+    get_pseudo_pawn_moves(board, color, valid_destinations, moves);
+    get_pseudo_knight_moves(board, color, valid_destinations, moves);
+    get_pseudo_bishop_moves(board, color, valid_destinations, moves);
+    get_pseudo_rook_moves(board, color, valid_destinations, moves);
+    get_pseudo_queen_moves(board, color, valid_destinations, moves);
+    get_pseudo_king_moves(board, color, moves);
+    get_castling_moves(board, color, moves); 
+
+}
+
 /// Returns vector of pseudo-legal queen moves
 pub fn get_pseudo_queen_moves(board: &Board, color: Color, valid_destinations: Bitboard, moves: &mut MoveList) {
     let queen_bb = board.get_queen_bb(color);
