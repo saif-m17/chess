@@ -1,6 +1,6 @@
 use crate::bitboards::{*};
 use crate::board::Board;
-use crate::movegen::{get_pseudo_legal_moves, has_legal_move, is_in_check, moves_into_check};
+use crate::movegen::{get_captures, get_pseudo_legal_moves, has_legal_move, is_in_check, moves_into_check};
 use crate::moves::{Color, Color::{*}, Move, Piece::{*}, Square};
 use crate::utils::MoveList;
 use std::collections::HashMap; 
@@ -50,6 +50,7 @@ pub struct GameState {
     past_states: HashMap<u64, u8>,
     pseudo_legal_moves: MoveCache,
     legal_moves: MoveCache,
+    captures: MoveCache,
     current_hash: u64,
 
 }
@@ -66,6 +67,7 @@ impl GameState {
             winner: None,
             past_states: HashMap::new(),
             pseudo_legal_moves: MoveCache::new(),
+            captures: MoveCache::new(),
             legal_moves: MoveCache::new(),
             current_hash: 0u64,
         }; 
@@ -98,6 +100,7 @@ impl GameState {
             past_states: HashMap::new(),
             pseudo_legal_moves: MoveCache::new(),
             legal_moves: MoveCache::new(),
+            captures: MoveCache::new(),
             current_hash: 0u64,
         }; 
 
@@ -269,8 +272,13 @@ impl GameState {
         }
     }
 
-    pub fn get_gamestate_captures(&mut self) -> MoveList {
-        todo!()
+    pub fn get_gamestate_captures(&mut self) -> &MoveList {
+        if self.captures.is_cached() {
+            self.captures.get_cache()
+        } else {
+            get_captures(&self.board, self.side, &mut self.captures.get_cache());
+            self.captures.get_cache()
+        }
     }
 
     /// Function to initialize zobrist hash from either FEN or regular starting position.
