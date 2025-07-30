@@ -269,6 +269,10 @@ impl GameState {
         }
     }
 
+    pub fn get_gamestate_captures(&mut self) -> MoveList {
+        todo!()
+    }
+
     /// Function to initialize zobrist hash from either FEN or regular starting position.
     fn get_zobrist(&self) -> u64 {
         let mut zobrist_hash = 0u64; 
