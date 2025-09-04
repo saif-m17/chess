@@ -3,7 +3,7 @@ use std::fmt;
 use crate::utils::{*}; 
 use crate::bitboards::{*}; 
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Piece {
     Pawn = 0,
     Knight,
@@ -13,7 +13,7 @@ pub enum Piece {
     King,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Color {
     White = 0,
     Black = 1,
@@ -26,7 +26,7 @@ impl Color {
     
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub enum MoveType {
     Normal,
     Castle { kingside: bool },
@@ -54,7 +54,7 @@ impl Square {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub struct Move {
     pub from: Square,                    // 0-63 square index
     pub to: Square,                      // 0-63 square index  

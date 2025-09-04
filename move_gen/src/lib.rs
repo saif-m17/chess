@@ -5,6 +5,8 @@ pub mod attacktables;
 pub mod game_state;
 pub mod utils; 
 pub mod bitboards;
+pub mod action_space;
+pub mod tensor;
 
 pub use board::Board;
 pub use moves::{Move, MoveType};
