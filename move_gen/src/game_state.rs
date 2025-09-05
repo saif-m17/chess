@@ -133,6 +133,10 @@ impl GameState {
         self.outcome 
     }
 
+    pub fn get_board(&self) -> &Board {
+        &self.board
+    }
+
     /// Makes move & checks for legality / outcomes
     pub fn make_move(&mut self, mv: Move) -> Result<(), MoveError>{
         if self.get_outcome().is_some() {
