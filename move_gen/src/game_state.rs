@@ -137,6 +137,10 @@ impl GameState {
         &self.board
     }
 
+    pub fn get_side(&self) -> Color {
+        self.side
+    }
+
     /// Makes move & checks for legality / outcomes
     pub fn make_move(&mut self, mv: Move) -> Result<(), MoveError>{
         if self.get_outcome().is_some() {
