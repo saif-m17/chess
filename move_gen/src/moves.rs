@@ -2,6 +2,7 @@ use num_enum::TryFromPrimitive;
 use std::fmt;
 use crate::utils::{*}; 
 use crate::bitboards::{*}; 
+use crate::board::Board; 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Piece {
@@ -52,6 +53,15 @@ impl Square {
     pub const fn to_bitboard(self) -> u64 {
         1u64 << (self as u64)
     }
+
+    pub fn file_of(self) -> u8 { (self as u8) & 7 }
+
+    pub fn rank_of(self) -> u8 { (self as u8) >> 3 }
+
+    pub fn is_empty(self, board: &Board) -> bool {
+        board.get_piece_at(self as u64).is_none()
+    }
+
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Copy)]

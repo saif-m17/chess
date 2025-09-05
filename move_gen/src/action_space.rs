@@ -88,3 +88,7 @@ pub fn decode_action(action: ActionID) -> Result<MoveIntent, &'static str> {
     })
 
 }
+
+pub fn realize_move(board: &Board, intent: MoveIntent) -> Result<Move, &'static str> {
+    todo!()
+}
