@@ -13,3 +13,9 @@ __pycache__/
 
 # Python environment
 /chess_env
+
+# Ignore flamegraph output
+move_gen/flamegraph.svg
+
+# Ignore testing data
+move_gen/test_move_data

@@ -1,5 +1,5 @@
 use crate::bitboards::BitboardExt;
-use crate::moves::{Move, Piece, Square, Color};
+use crate::moves::Color;
 use crate::game_state::GameState; 
 use crate::bitboards::Bitboard;
 
@@ -129,11 +129,11 @@ impl TensorBuffer {
                     TensorBuffer::write_plane(bb, index, &mut self.buf);
                 }
                 "white_kingside" => {
-                    let bb = EMPTY_OR_FULL[board.can_castle_kingside(Color::Black) as usize];
+                    let bb = EMPTY_OR_FULL[board.can_castle_kingside(Color::White) as usize];
                     TensorBuffer::write_plane(bb, index, &mut self.buf);
                 }
                 "black_queenside" => {
-                    let bb = EMPTY_OR_FULL[board.can_castle_queenside(Color::White) as usize];
+                    let bb = EMPTY_OR_FULL[board.can_castle_queenside(Color::Black) as usize];
                     TensorBuffer::write_plane(bb, index, &mut self.buf);
                 },
                 "black_kingside" => {
