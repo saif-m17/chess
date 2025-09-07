@@ -1,11 +1,11 @@
-use crate::bitboards::BitboardExt;
+use crate::bitboards::{BitboardExt, EMPTY, FULL};
 use crate::moves::Color;
 use crate::game_state::GameState; 
 use crate::bitboards::Bitboard;
 
 pub const SCHEMA_VERSION: u32 = 0;
 pub const BOARD_SIZE: u32 = 64;
-pub const EMPTY_OR_FULL: [Bitboard; 2] = [0u64, u64::MAX]; // all 0s if false, or 1s if True 
+pub const EMPTY_OR_FULL: [Bitboard; 2] = [EMPTY, FULL]; 
 
 pub struct FeatureSchema {
     channels: usize,
@@ -176,5 +176,23 @@ impl TensorBuffer {
             plane[index * 64 + i] = val; 
         }
     }
+
+    pub fn print_tensor(&self) {
+        let names = self.schema.channel_names();
+        let num_planes = self.buf.len() / 64;
+    
+        for (p, &name) in names.iter().enumerate().take(num_planes) {
+            println!("Plane {} ({})", p, name);
+            for rank in (0..8).rev() { 
+                for file in 0..8 {
+                    let idx = p * 64 + rank * 8 + file;
+                    print!("{:.0} ", self.buf[idx]);
+                }
+                println!();
+            }
+            println!();
+        }
+    }
+
 
 }
