@@ -147,7 +147,7 @@ pub fn realize_move(board: &Board, intent: MoveIntent) -> Result<Move, &'static 
             return Ok(Move::new_promotion(intent.from(), intent.to(), color, board.get_piece_at(intent.to() as u64), 
             intent.promotion().expect("move should be valid"))); 
         }
-        if drow.abs() == 1 && dfile.abs() == 1 && board.get_piece_at(intent.to() as u4).is_none() {
+        if drow.abs() == 1 && dfile.abs() == 1 && board.get_piece_at(intent.to() as u64).is_none() {
             return Ok(Move::new_en_passant(intent.from(), intent.to(), color)); 
         }
     }
