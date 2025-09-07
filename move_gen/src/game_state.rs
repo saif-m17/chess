@@ -43,7 +43,7 @@ impl MoveCache {
 pub struct GameState {
     board: Board,
     move_number: u64,
-    half_move_clock: u64,
+    half_move_clock: u32,
     side: Color,
     outcome: Option<Outcome>,
     winner: Option<Color>,
@@ -348,6 +348,14 @@ impl GameState {
 
     pub fn get_winner(&self) -> Option<Color> {
         self.winner
+    }
+
+    pub fn get_half_move_clock(&self) -> u32 {
+        self.half_move_clock
+    }
+
+    pub fn get_three_fold_count(&self) -> u8 {
+        *self.past_states.get(&self.current_hash).unwrap_or(&0)
     }
 
 }
