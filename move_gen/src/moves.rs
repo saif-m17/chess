@@ -27,6 +27,12 @@ impl Color {
     
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum CastlingSide {
+    Queenside = 0,
+    Kingside = 1,
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub enum MoveType {
     Normal,

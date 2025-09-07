@@ -1,5 +1,5 @@
 use crate::bitboards::{*}; 
-use crate::moves::{Color::{self, *}, Move, MoveType, Piece::{self, *}, Square::{self, *}};
+use crate::moves::{Color::{self, *}, Move, MoveType, Piece::{self, *}, Square::{self, *}, CastlingSide};
 use crate::movegen::is_attacked; 
 
 #[derive(Clone, Debug)]
@@ -100,10 +100,10 @@ impl Board {
         let castling_rights = parts[2];
         for ch in castling_rights.chars() {
             match ch {
-                'K' => board.move_changed_castling_rights[0][1] = -1,
-                'Q' => board.move_changed_castling_rights[0][0] = -1,
-                'k' => board.move_changed_castling_rights[1][1] = -1,
-                'q' => board.move_changed_castling_rights[1][0] = -1,
+                'K' => board.move_changed_castling_rights[Color::White as usize][CastlingSide::Kingside as usize] = -1,
+                'Q' => board.move_changed_castling_rights[Color::White as usize][CastlingSide::Queenside as usize] = -1,
+                'k' => board.move_changed_castling_rights[Color::Black as usize][CastlingSide::Kingside as usize] = -1,
+                'q' => board.move_changed_castling_rights[Color::Black as usize][CastlingSide::Queenside as usize] = -1,
                 '-' => break,
                 _ => return Err(FenError::InvalidCastling),
             }

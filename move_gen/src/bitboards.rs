@@ -194,6 +194,8 @@ pub const CASTLING_SQUARES_CANT_BE_ATTACKED: [[[Square; 2]; 2]; 2] = [[[Square::
                                                                     [[Square::C8, Square::D8],
                                                                     [Square::F8, Square::G8]]]; 
 
+pub const CASTLING_DESTINATION_SQUARES: [[Square; 2]; 2] = [[Square::C1, Square::G1], [Square::C8, Square::G8]]; 
+
 // Misc utility stuff
 #[derive(Debug, PartialEq)]
 pub enum FenError {
