@@ -1,9 +1,19 @@
 use crate::bitboards::{*};
 use crate::board::Board;
 use crate::movegen::{get_captures, get_pseudo_legal_moves, has_legal_move, is_in_check, moves_into_check};
-use crate::moves::{Color, Color::{*}, Move, Piece::{*}, Square};
+use crate::moves::{Color, Color::{*}, Move, Piece, Piece::{*}, Square, CastlingSide};
 use crate::utils::MoveList;
+use crate::action_space::MoveIntent; 
 use std::collections::HashMap; 
+
+const GET_PIECE_BITBOARD: [fn(&Board, Color) -> Bitboard; 6] = [
+    Board::get_pawn_bb,
+    Board::get_knight_bb,
+    Board::get_bishop_bb,
+    Board::get_rook_bb,
+    Board::get_queen_bb,
+    Board::get_king_bb,
+]; 
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Outcome {
@@ -340,6 +350,57 @@ impl GameState {
         }
 
         self.current_hash ^= ZOBRIST_IS_BLACK[Black as usize]; 
+    }
+
+    ///
+    pub fn realize_move(&mut self, intent: MoveIntent) -> Result<Move, &'static str> {
+        // Normal, Castle { kingside: bool }, En Passant, DoublePawnPush, Promotion { piece: Piece }
+        let piece = self.board.get_piece_at(intent.from() as u64).expect("move should be valid."); 
+    
+        let color = if GET_PIECE_BITBOARD[piece as usize](&self.board, Color::White) & intent.from().to_bitboard() != 0 {
+            Color::White
+        } else {
+            Color::Black
+        }; 
+    
+        let from_row = (intent.from() as u8) / 8;
+        let from_file = (intent.from() as u8) % 8;
+    
+        let to_row = (intent.to() as u8) / 8;
+        let to_file = (intent.to() as u8) % 8;
+    
+        let drow = (to_row as i8)  - (from_row as i8);
+        let dfile = (to_file as i8) - (from_file as i8); 
+    
+        if piece == Piece::King && intent.from() == KING_INITIAL_SQUARE[color as usize] && dfile.abs() == 2 {
+            if intent.to() == CASTLING_DESTINATION_SQUARES[color as usize][CastlingSide::Queenside as usize] {
+                return Ok(Move::new_castle(color, false))
+            } else {
+                return Ok(Move::new_castle(color, true))
+            }
+        }
+    
+        if piece == Piece::Pawn {
+            if drow.abs() == 2 {
+                return Ok(Move::new_double_pawn_push(intent.from(), intent.to(), color)); 
+            }
+            if intent.from().to_bitboard() & PAWN_PROMOTION_RANK[color as usize] != 0 {
+                return Ok(Move::new_promotion(intent.from(), intent.to(), color, self.board.get_piece_at(intent.to() as u64), 
+                intent.promotion().expect("move should be valid"))); 
+            }
+            if drow.abs() == 1 && dfile.abs() == 1 && self.board.get_piece_at(intent.to() as u64).is_none() {
+                return Ok(Move::new_en_passant(intent.from(), intent.to(), color)); 
+            }
+        }
+    
+        Ok(Move::new_normal(
+            intent.from(),
+            intent.to(), 
+            self.board.get_piece_at(intent.from() as u64).expect("move should be valid"),
+            color, 
+            self.board.get_piece_at(intent.to() as u64))
+        )
+    
     }
 
     pub fn display_board(&self) {
