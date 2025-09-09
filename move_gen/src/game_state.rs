@@ -21,6 +21,7 @@ pub enum Outcome {
     Checkmate = 1,
 }
 
+#[derive(Clone, Debug)]
 struct MoveCache {
     moves: MoveList,
     cached: bool,
@@ -50,6 +51,7 @@ impl MoveCache {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct GameState {
     board: Board,
     move_number: u64,
