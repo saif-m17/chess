@@ -42,6 +42,23 @@ fn code_to_promo(code: u32) -> Option<Piece> {
     }
 }
 
+pub struct Action {
+    action: ActionID,
+    mve: Move,
+}
+
+impl Action {
+    pub fn action_id(&self) -> ActionID {self.action}
+    pub fn get_move(&self) -> &Move {&self.mve}
+    pub fn new(mv: &Move) -> Self {
+        let actionid = encode_action(mv);
+        Action {
+            action: actionid,
+            mve: *mv,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct MoveIntent {
     pub from: Square, 

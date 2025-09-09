@@ -352,7 +352,7 @@ impl GameState {
         self.current_hash ^= ZOBRIST_IS_BLACK[Black as usize]; 
     }
 
-    ///
+    /// Realize move from move_intent (info decoded from action)
     pub fn realize_move(&mut self, intent: MoveIntent) -> Result<Move, &'static str> {
         // Normal, Castle { kingside: bool }, En Passant, DoublePawnPush, Promotion { piece: Piece }
         let piece = self.board.get_piece_at(intent.from() as u64).expect("move should be valid."); 

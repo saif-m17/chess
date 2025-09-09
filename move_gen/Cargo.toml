@@ -12,3 +12,5 @@ num_enum = "0.7"
 once_cell = "1.19"
 pyo3 = { version = "0.24.1", features = ["extension-module"] }
 rand = "0.8"
+ndarray = "0.15"
+sprs = "0.11"
