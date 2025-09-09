@@ -67,6 +67,10 @@ impl TensorBuffer {
         self.buf
     }
 
+    pub fn schema(&self) -> &FeatureSchema {
+        &self.schema
+    }
+
     pub fn write_from(&mut self, game: &GameState) {
         let board = game.get_board(); 
         for &name in self.schema.channel_names().iter() {
@@ -125,19 +129,19 @@ impl TensorBuffer {
                     TensorBuffer::write_plane(bb, index, &mut self.buf);
                 },
                 "white_queenside" => {
-                    let bb = EMPTY_OR_FULL[board.can_castle_queenside(Color::White) as usize];
+                    let bb = EMPTY_OR_FULL[board.castling_right_queenside(Color::White) as usize];
                     TensorBuffer::write_plane(bb, index, &mut self.buf);
                 }
                 "white_kingside" => {
-                    let bb = EMPTY_OR_FULL[board.can_castle_kingside(Color::White) as usize];
+                    let bb = EMPTY_OR_FULL[board.castling_right_kingside(Color::White) as usize];
                     TensorBuffer::write_plane(bb, index, &mut self.buf);
                 }
                 "black_queenside" => {
-                    let bb = EMPTY_OR_FULL[board.can_castle_queenside(Color::Black) as usize];
+                    let bb = EMPTY_OR_FULL[board.castling_right_queenside(Color::Black) as usize];
                     TensorBuffer::write_plane(bb, index, &mut self.buf);
                 },
                 "black_kingside" => {
-                    let bb = EMPTY_OR_FULL[board.can_castle_kingside(Color::Black) as usize];
+                    let bb = EMPTY_OR_FULL[board.castling_right_kingside(Color::Black) as usize];
                     TensorBuffer::write_plane(bb, index, &mut self.buf);
                 }
                 "en_passant_sq" => {

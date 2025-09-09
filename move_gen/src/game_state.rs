@@ -416,7 +416,7 @@ impl GameState {
     }
 
     pub fn get_three_fold_count(&self) -> u8 {
-        *self.past_states.get(&self.current_hash).unwrap_or(&0)
+        (*self.past_states.get(&self.current_hash).unwrap_or(&0) - 1).max(0)
     }
 
 }

@@ -553,4 +553,12 @@ impl Board {
         self.past_moves.get(self.move_number as usize - 1)
     }
 
+    pub fn castling_right_queenside(&self, color: Color) -> bool {
+        self.move_changed_castling_rights[color as usize][CastlingSide::Queenside as usize] < 0
+    }
+
+    pub fn castling_right_kingside(&self, color: Color) -> bool {
+        self.move_changed_castling_rights[color as usize][CastlingSide::Kingside as usize] < 0
+    }
+
 }
