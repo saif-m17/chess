@@ -7,6 +7,8 @@ pub mod utils;
 pub mod bitboards;
 pub mod action_space;
 pub mod tensor;
+pub mod mcts;
+pub mod replay_buffer;
 
 pub use board::Board;
 pub use moves::{Move, MoveType};

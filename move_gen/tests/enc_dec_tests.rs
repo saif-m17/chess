@@ -1,7 +1,6 @@
 use chess_core::game_state::GameState; 
 use chess_core::tensor::{TensorBuffer, FeatureSchema};
 use chess_core::action_space::{encode_action, decode_action};
-use chess_core::moves::Color;
 
 #[test]
 fn encode_action_test() {
@@ -133,4 +132,3 @@ fn tensorbuffer_startpos_encoding() {
         .all(|&x| x == 0.0),
         "Threefold count plane should be all 0s at start");
 }
-

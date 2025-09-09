@@ -419,4 +419,8 @@ impl GameState {
         (*self.past_states.get(&self.current_hash).unwrap_or(&0) - 1).max(0)
     }
 
+    pub fn current_hash(&self) -> u64 {
+        self.current_hash
+    }
+
 }
