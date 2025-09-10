@@ -42,6 +42,7 @@ fn code_to_promo(code: u32) -> Option<Piece> {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub struct Action {
     action: ActionID,
     mve: Move,

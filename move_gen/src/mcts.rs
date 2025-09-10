@@ -12,7 +12,7 @@ pub struct Node {
     value: HashMap<ActionID, f32>,
     visit_count: HashMap<ActionID, u32>,
     children: HashMap<ActionID, u64>, // zobrist hashes of child nodes 
-    parent: Option<u64>, // parent hash - None if root
+    parent: Option<(u64, ActionID)>, // parent hash - None if root
     legal_actions: Vec<Action>,
     total_visit_count: u32,
 }
@@ -26,7 +26,7 @@ impl Node {
     pub fn zhash(&self) -> u64 {self.zobrist_hash}
     pub fn legal_actions(&self) -> &Vec<Action> {&self.legal_actions}
     pub fn total_visit_count(&self) -> u32 {self.total_visit_count}
-    pub fn parent(&self) -> Option<u64> {self.parent}
+    pub fn parent(&self) -> &Option<(u64, ActionID)> {&self.parent}
 
     pub fn new_default() -> Self {
         let mut game = GameState::new();
@@ -50,7 +50,7 @@ impl Node {
         }
 
         let zobrist_hash = game.current_hash(); 
-        let total_visit_count = 0; 
+        let total_visit_count = 1; 
         let parent = None; 
 
         Node {
@@ -58,7 +58,8 @@ impl Node {
         }
     }
 
-    pub fn from_game_state(mut game: GameState, parent: Option<u64>) -> Self {
+    /// Used to produce a node that is not the root node 
+    pub fn from_game_state(mut game: GameState, parent: Option<(u64, ActionID)>) -> Self {
         let move_list = game.get_gamestate_legal_moves(); 
 
         let mut prior = HashMap::new();
@@ -108,7 +109,7 @@ impl Node {
         }
 
         let zobrist_hash = game.current_hash(); 
-        let total_visit_count = 0;
+        let total_visit_count = 1;
         let parent = None; 
 
         Node {
@@ -117,28 +118,32 @@ impl Node {
     }
 
     pub fn select_child(&mut self) -> (Option<u64>, Option<Node>) {
-        let best_action = self.legal_actions()
+        if let Some(best_action) = self.legal_actions()
             .iter()
             .max_by(|a, b|{
                 let sqrt_total_visits = (self.total_visit_count() as f32).sqrt();
                 let ucba = self.value(a.action_id()) + PUCB_C * self.prior(a.action_id()) * sqrt_total_visits / (1.0 + (self.visit_count(a.action_id()) as f32)); 
                 let ucbb = self.value(b.action_id()) + PUCB_C * self.prior(b.action_id()) * sqrt_total_visits / (1.0 + (self.visit_count(b.action_id()) as f32));
                 ucba.partial_cmp(&ucbb).unwrap()
-            })
-            .unwrap(); 
-        
-        if self.children.contains_key(&best_action.action_id()) {
-            return (Some(*self.children.get(&best_action.action_id()).unwrap()), None); 
-        } else {
-            let mut game = self.game().clone(); 
-            if game.make_move(*best_action.get_move()).is_err() {
+            }) {
+
+                if self.children.contains_key(&best_action.action_id()) {
+                    return (Some(*self.children.get(&best_action.action_id()).unwrap()), None); 
+                } else {
+                    let mut game = self.game().clone(); 
+                    if game.make_move(*best_action.get_move()).is_err() {
+                        return (None, None)
+                    }; 
+                    let hash = game.current_hash(); 
+                    let id = best_action.action_id(); 
+                    self.children.insert(id, hash); 
+                    let node = Node::from_game_state(game, Some((self.zhash(), id))); 
+                    return (Some(hash), Some(node))
+                }
+            } else {
                 return (None, None)
-            }; 
-            let hash = game.current_hash(); 
-            self.children.insert(best_action.action_id(), hash); 
-            let node = Node::from_game_state(game, Some(self.zhash())); 
-            return (Some(hash), Some(node))
-        }
+            }
+        
     }
 
 }
@@ -155,9 +160,39 @@ impl MCTS {
 
     pub fn new_default() -> Self {
         let root_node = Node::new_default(); 
+        let root = root_node.zhash(); 
+        let mut tree = HashMap::new();
+        tree.insert(root, root_node); 
+
         MCTS {
-            tree: HashMap::new(),
-            root: root_node.zhash(),
+            tree,
+            root,
         }
+    }
+
+    pub fn propagate_values(&mut self, leaf: &mut Node, val: f32) {
+        let mut action_to_path: Option<ActionID> = None; 
+        let mut curr_hash = leaf.zhash();
+        let mut v = val; 
+        while curr_hash != self.root() {
+            if let Some(curr) = self.tree.get_mut(&curr_hash) {
+                curr.total_visit_count += 1;
+                if let Some(action_id) = action_to_path {
+                    *curr.visit_count.entry(action_id).or_default() += 1; 
+                    *curr.value.entry(action_id).or_default() += (v - curr.value(action_id)) / (curr.visit_count(action_id) as f32); 
+                }
+                if let Some((parent_hash, parent_action)) = curr.parent() {
+                    curr_hash = *parent_hash;
+                    action_to_path = Some(*parent_action); 
+                }
+                v = -v; 
+            } else {
+                break; 
+            }
+        }
+    }
+
+    pub fn simulate_game() {
+
     }
 }
