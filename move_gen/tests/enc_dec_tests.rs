@@ -69,7 +69,6 @@ fn tensorbuffer_startpos_encoding() {
     // Basic shape checks
     assert_eq!(buffer.len(), 20 * 64, "Tensor buffer should have 20 planes of size 64");
 
-    // === Piece placement tests ===
     // White pawns on rank 2
     let wp_idx = buffer.schema().index_of("white_pawns").unwrap();
     for file in 0..8 {
@@ -94,15 +93,14 @@ fn tensorbuffer_startpos_encoding() {
     let bk_idx = buffer.schema().index_of("black_king").unwrap();
     assert_eq!(buffer.as_slice()[bk_idx * 64 + 60], 1.0, "Black king missing at e8");
 
-    // === Metadata planes ===
-    // Side to move (white at start → EMPTY board)
+    // Side to move (white at start -> EMPTY board)
     let stm_idx = buffer.schema().index_of("side_to_move").unwrap();
     assert!(buffer.as_slice()[stm_idx * 64..stm_idx * 64 + 64]
         .iter()
         .all(|&x| (x - 0.0).abs() < 1e-6),
         "Side-to-move plane should be all 1s for white");
 
-    // Castling rights at start (all true → FULL board)
+    // Castling rights at start (all true -> FULL board)
     for &castle in &["white_queenside", "white_kingside", "black_queenside", "black_kingside"] {
         let cidx = buffer.schema().index_of(castle).unwrap();
         assert!(buffer.as_slice()[cidx * 64..cidx * 64 + 64]
@@ -118,14 +116,14 @@ fn tensorbuffer_startpos_encoding() {
         .all(|&x| x == 0.0),
         "En passant plane should be all 0s at start");
 
-    // Halfmove clock = 0 → scalar plane filled with 0
+    // Halfmove clock = 0 -> scalar plane filled with 0
     let hmc_idx = buffer.schema().index_of("halfmove_clock").unwrap();
     assert!(buffer.as_slice()[hmc_idx * 64..hmc_idx * 64 + 64]
         .iter()
         .all(|&x| x == 0.0),
         "Halfmove clock plane should be all 0s at start");
 
-    // Threefold count = 0 → scalar plane filled with 0
+    // Threefold count = 0 -> scalar plane filled with 0
     let tf_idx = buffer.schema().index_of("threefold_count").unwrap();
     assert!(buffer.as_slice()[tf_idx * 64..tf_idx * 64 + 64]
         .iter()
