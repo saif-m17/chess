@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use crate::GameState;
 use crate::action_space::{Action, ActionID}; 
+use crate::Move; 
 
 const PUCB_C: f32 = 1.0; // c in upper confidence bound calculation for MCTS -> higher encourages exploration
 
@@ -14,6 +15,7 @@ pub struct Node {
     children: HashMap<ActionID, u64>, // zobrist hashes of child nodes 
     parent: Option<(u64, ActionID)>, // parent hash - None if root
     legal_actions: Vec<Action>,
+    unvisited_actions: Vec<Action>,
     total_visit_count: u32,
 }
 
@@ -27,7 +29,17 @@ impl Node {
     pub fn legal_actions(&self) -> &Vec<Action> {&self.legal_actions}
     pub fn total_visit_count(&self) -> u32 {self.total_visit_count}
     pub fn parent(&self) -> &Option<(u64, ActionID)> {&self.parent}
+    pub fn unvisited_actions(&self) -> &Vec<Action> {&self.unvisited_actions}
 
+    pub fn fully_expanded(&self) -> bool {
+        self.unvisited_actions.len() == 0
+    }
+
+    pub fn game_over(&self) -> bool {
+        self.game.get_outcome().is_some()
+    }
+
+    /// Default MCTree Node. Begins with uniform prior for policy.
     pub fn new_default() -> Self {
         let mut game = GameState::new();
         let move_list = game.get_gamestate_legal_moves(); 
@@ -36,7 +48,8 @@ impl Node {
         let mut value = HashMap::new();
         let mut visit_count = HashMap::new();
         let children = HashMap::new(); 
-        let mut legal_actions = Vec::new(); 
+        let mut legal_actions = Vec::with_capacity(move_list.len()); 
+        let mut unvisited_actions = Vec::with_capacity(move_list.len());
 
         let uniform_prior = 1.0 / (move_list.len() as f32); 
 
@@ -46,6 +59,7 @@ impl Node {
             value.insert(action.action_id(), 0.0);
             visit_count.insert(action.action_id(), 0);
             legal_actions.push(action); 
+            unvisited_actions.push(Action::new(mv))
              
         }
 
@@ -54,7 +68,7 @@ impl Node {
         let parent = None; 
 
         Node {
-            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, total_visit_count,
+            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count,
         }
     }
 
@@ -66,7 +80,8 @@ impl Node {
         let mut value = HashMap::new();
         let mut visit_count = HashMap::new();
         let children = HashMap::new(); 
-        let mut legal_actions = Vec::new(); 
+        let mut legal_actions = Vec::with_capacity(move_list.len());
+        let mut unvisited_actions = Vec::with_capacity(move_list.len());
 
         let uniform_prior = 1.0 / (move_list.len() as f32); 
 
@@ -76,6 +91,7 @@ impl Node {
             value.insert(action.action_id(), 0.0);
             visit_count.insert(action.action_id(), 0);
             legal_actions.push(action); 
+            unvisited_actions.push(Action::new(mv)); 
              
         }
 
@@ -83,10 +99,11 @@ impl Node {
         let total_visit_count = 0; 
 
         Node {
-            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, total_visit_count,
+            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count,
         }
     }
 
+    /// Returns MCTree Node from fen string of game state. 
     pub fn from_fen(fen: &str) -> Self {
         let mut game = GameState::from_fen(fen).unwrap();
         let moves_list = game.get_gamestate_legal_moves(); 
@@ -97,6 +114,7 @@ impl Node {
         let mut visit_count = HashMap::new();
         let children = HashMap::new(); 
         let mut legal_actions = Vec::with_capacity(moves_list.len()); 
+        let mut unvisited_actions = Vec::with_capacity(moves_list.len());
 
         let uniform_prior = 1.0 / (moves_list.len() as f32); 
 
@@ -106,6 +124,8 @@ impl Node {
             value.insert(action.action_id(), 0.0);
             visit_count.insert(action.action_id(), 0);
             legal_actions.push(action); 
+            unvisited_actions.push(Action::new(mv)); 
+
         }
 
         let zobrist_hash = game.current_hash(); 
@@ -113,10 +133,11 @@ impl Node {
         let parent = None; 
 
         Node {
-            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, total_visit_count, 
+            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count, 
         }
     }
 
+    /// Select child based on max UCB score of children. Only occurs when subtree fully expanded (TODO Correct for this)
     pub fn select_child(&mut self) -> (Option<u64>, Option<Node>) {
         if let Some(best_action) = self.legal_actions()
             .iter()
@@ -146,6 +167,12 @@ impl Node {
         
     }
 
+    /// Selects an unvisited node based on prior distribution. Only called when we have reached a node that is not
+    /// fully expanded. 
+    pub fn visit_unvisited(&self) -> Node {
+        todo!()
+    }
+
 }
 
 pub struct MCTS {
@@ -170,6 +197,7 @@ impl MCTS {
         }
     }
 
+    /// Propagates value up the MCTree. Value is the result of value network called on gamestate of leafnode. 
     pub fn propagate_values(&mut self, leaf: &mut Node, val: f32) {
         let mut action_to_path: Option<ActionID> = None; 
         let mut curr_hash = leaf.zhash();
@@ -192,7 +220,4 @@ impl MCTS {
         }
     }
 
-    pub fn simulate_game() {
-
-    }
 }
