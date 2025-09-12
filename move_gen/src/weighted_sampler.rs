@@ -1,4 +1,3 @@
-use core::f32;
 use rand::Rng;
 
 #[derive(Debug, Clone)]
