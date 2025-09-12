@@ -9,6 +9,7 @@ pub mod action_space;
 pub mod tensor;
 pub mod mcts;
 pub mod replay_buffer;
+pub mod weighted_sampler;
 
 pub use board::Board;
 pub use moves::{Move, MoveType};

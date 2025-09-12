@@ -1,7 +1,10 @@
 use std::collections::HashMap;
+use crate::weighted_sampler::WeightedSampler; 
+use rand::rngs::ThreadRng;
+use rand::Rng;
+use rand::thread_rng; 
 use crate::GameState;
 use crate::action_space::{Action, ActionID}; 
-use crate::Move; 
 
 const PUCB_C: f32 = 1.0; // c in upper confidence bound calculation for MCTS -> higher encourages exploration
 
@@ -15,8 +18,9 @@ pub struct Node {
     children: HashMap<ActionID, u64>, // zobrist hashes of child nodes 
     parent: Option<(u64, ActionID)>, // parent hash - None if root
     legal_actions: Vec<Action>,
-    unvisited_actions: Vec<Action>,
+    unvisited_actions: WeightedSampler<Action>,
     total_visit_count: u32,
+    rng: ThreadRng
 }
 
 impl Node {
@@ -29,7 +33,6 @@ impl Node {
     pub fn legal_actions(&self) -> &Vec<Action> {&self.legal_actions}
     pub fn total_visit_count(&self) -> u32 {self.total_visit_count}
     pub fn parent(&self) -> &Option<(u64, ActionID)> {&self.parent}
-    pub fn unvisited_actions(&self) -> &Vec<Action> {&self.unvisited_actions}
 
     pub fn fully_expanded(&self) -> bool {
         self.unvisited_actions.len() == 0
@@ -49,7 +52,7 @@ impl Node {
         let mut visit_count = HashMap::new();
         let children = HashMap::new(); 
         let mut legal_actions = Vec::with_capacity(move_list.len()); 
-        let mut unvisited_actions = Vec::with_capacity(move_list.len());
+        let mut unvisited_actions = WeightedSampler::new();
 
         let uniform_prior = 1.0 / (move_list.len() as f32); 
 
@@ -59,48 +62,53 @@ impl Node {
             value.insert(action.action_id(), 0.0);
             visit_count.insert(action.action_id(), 0);
             legal_actions.push(action); 
-            unvisited_actions.push(Action::new(mv))
+            unvisited_actions.push((Action::new(mv), uniform_prior))
              
         }
 
         let zobrist_hash = game.current_hash(); 
         let total_visit_count = 1; 
         let parent = None; 
+        let rng = thread_rng(); 
 
         Node {
-            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count,
+            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count, rng
         }
     }
 
-    /// Used to produce a node that is not the root node 
-    pub fn from_game_state(mut game: GameState, parent: Option<(u64, ActionID)>) -> Self {
+    /// Used to produce a node that is not the root node. Note: does not take in a ref to a gamestate object.
+    pub fn from_game_state(mut game: GameState, parent: Option<(u64, ActionID)>, priors: &Vec<f32>) -> Result<Self, &'static str> {
         let move_list = game.get_gamestate_legal_moves(); 
+
+        if priors.len() != move_list.len() {
+            return Err("Priors tensor must be of length equal to actions.")
+        }
 
         let mut prior = HashMap::new();
         let mut value = HashMap::new();
         let mut visit_count = HashMap::new();
         let children = HashMap::new(); 
         let mut legal_actions = Vec::with_capacity(move_list.len());
-        let mut unvisited_actions = Vec::with_capacity(move_list.len());
+        let mut unvisited_actions = WeightedSampler::new();
 
-        let uniform_prior = 1.0 / (move_list.len() as f32); 
-
-        for mv in move_list.iter() {
+        for (i, mv) in move_list.iter().enumerate() {
             let action = Action::new(mv); 
-            prior.insert(action.action_id(), uniform_prior);
+            let p = *priors.get(i).expect("tensor should be of appropriate length"); 
+            prior.insert(action.action_id(), p);
             value.insert(action.action_id(), 0.0);
             visit_count.insert(action.action_id(), 0);
             legal_actions.push(action); 
-            unvisited_actions.push(Action::new(mv)); 
+            unvisited_actions.push((Action::new(mv), p)); 
              
         }
 
         let zobrist_hash = game.current_hash(); 
         let total_visit_count = 0; 
+        let rng = thread_rng();
 
-        Node {
-            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count,
-        }
+        Ok(Node {
+            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count, rng
+        })
     }
 
     /// Returns MCTree Node from fen string of game state. 
@@ -114,7 +122,7 @@ impl Node {
         let mut visit_count = HashMap::new();
         let children = HashMap::new(); 
         let mut legal_actions = Vec::with_capacity(moves_list.len()); 
-        let mut unvisited_actions = Vec::with_capacity(moves_list.len());
+        let mut unvisited_actions = WeightedSampler::new();
 
         let uniform_prior = 1.0 / (moves_list.len() as f32); 
 
@@ -124,21 +132,26 @@ impl Node {
             value.insert(action.action_id(), 0.0);
             visit_count.insert(action.action_id(), 0);
             legal_actions.push(action); 
-            unvisited_actions.push(Action::new(mv)); 
+            unvisited_actions.push((Action::new(mv), uniform_prior)); 
 
         }
 
         let zobrist_hash = game.current_hash(); 
         let total_visit_count = 1;
         let parent = None; 
+        let rng = thread_rng();
 
         Node {
-            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count, 
+            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count, rng
         }
     }
 
     /// Select child based on max UCB score of children. Only occurs when subtree fully expanded (TODO Correct for this)
-    pub fn select_child(&mut self) -> (Option<u64>, Option<Node>) {
+    pub fn select_child(&self) -> Result<u64, &'static str> {
+        if !self.fully_expanded() || self.game_over() {
+            return Err("Node should be fully-expanded and non-terminal")
+        }
+
         if let Some(best_action) = self.legal_actions()
             .iter()
             .max_by(|a, b|{
@@ -147,30 +160,34 @@ impl Node {
                 let ucbb = self.value(b.action_id()) + PUCB_C * self.prior(b.action_id()) * sqrt_total_visits / (1.0 + (self.visit_count(b.action_id()) as f32));
                 ucba.partial_cmp(&ucbb).unwrap()
             }) {
-
                 if self.children.contains_key(&best_action.action_id()) {
-                    return (Some(*self.children.get(&best_action.action_id()).unwrap()), None); 
+                    return Ok(*self.children.get(&best_action.action_id()).unwrap()); 
                 } else {
-                    let mut game = self.game().clone(); 
-                    if game.make_move(*best_action.get_move()).is_err() {
-                        return (None, None)
-                    }; 
-                    let hash = game.current_hash(); 
-                    let id = best_action.action_id(); 
-                    self.children.insert(id, hash); 
-                    let node = Node::from_game_state(game, Some((self.zhash(), id))); 
-                    return (Some(hash), Some(node))
+                    return Err("Child should exist")
                 }
             } else {
-                return (None, None)
+                return Err("Node should be non-terminal.")
             }
         
     }
 
     /// Selects an unvisited node based on prior distribution. Only called when we have reached a node that is not
     /// fully expanded. 
-    pub fn visit_unvisited(&self) -> Node {
-        todo!()
+    pub fn visit_unvisited(&mut self) -> Result<(GameState, Option<(u64, ActionID)>), &'static str> {
+        if self.fully_expanded() {
+            return Err("Node should not be fully expanded")
+        }
+
+        let action = self.unvisited_actions.sample(&mut self.rng).expect("Node not fully expanded."); 
+        let parent_hash = self.game.current_hash(); 
+        let mut game = self.game().clone(); 
+        if game.make_move(*action.get_move()).is_err() {
+            return Err("Must be a legal move"); 
+        }; 
+        let hash = game.current_hash(); 
+        let id = action.action_id(); 
+        self.children.insert(id, hash); 
+        return Ok((game, Some((parent_hash, id))))
     }
 
 }
@@ -218,6 +235,18 @@ impl MCTS {
                 break; 
             }
         }
+    }
+
+    pub fn select_child(&self, node: Node) -> Result<&Node, &'static str> {
+        if !node.fully_expanded() || node.game_over() {
+            return Err("Node must be fully expanded and non-terminal.")
+        }
+        let hash = node.select_child().expect("Node is fully expanded and non-term.");
+        Ok(self.tree.get(&hash).expect("Node should exist"))
+    }
+
+    pub fn visit_unvisited(&mut self, node: Node, priors: &Vec<f32>) {
+
     }
 
 }
