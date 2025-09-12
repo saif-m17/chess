@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use crate::weighted_sampler::WeightedSampler; 
 use rand::rngs::ThreadRng;
-use rand::Rng;
 use rand::thread_rng; 
 use crate::GameState;
 use crate::action_space::{Action, ActionID}; 
@@ -245,8 +244,20 @@ impl MCTS {
         Ok(self.tree.get(&hash).expect("Node should exist"))
     }
 
-    pub fn visit_unvisited(&mut self, node: Node, priors: &Vec<f32>) {
+    pub fn visit_unvisited(&mut self, node: &mut Node) -> Result<(GameState, (u64, ActionID)), &'static str>{
+        if node.fully_expanded() || node.game_over() {
+            return Err("Node must not be fully expanded and not terminal.")
+        }
+        let (game, parent) = node.visit_unvisited().expect("Node is not fully expanded and not terminal."); 
+        let parent = parent.unwrap();
+        Ok((game, parent))
 
+    }
+
+    pub fn add_node(&mut self, game: GameState, priors: Vec<f32>, parent: (u64, ActionID)) {
+        let hash = game.current_hash(); 
+        let node = Node::from_game_state(game, Some(parent), &priors).unwrap(); 
+        self.tree.insert(hash, node); 
     }
 
 }
