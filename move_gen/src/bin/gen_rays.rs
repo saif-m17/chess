@@ -21,7 +21,7 @@ fn main() {
 
 fn compute_ray(square: u8, dir: u8) -> Bitboard {
     let mut result = 0u64;
-    let mut current = Square::try_from(square as u64).unwrap();
+    let mut current = Square::try_from(square as u8).unwrap();
 
     while let Some(next) = step_in_direction(current as u8, dir) {
         if step_in_direction(next as u8, dir).is_some() {
@@ -35,7 +35,7 @@ fn compute_ray(square: u8, dir: u8) -> Bitboard {
 
 fn compute_ray_include_edge(square: u8, dir: u8) -> Bitboard {
     let mut result = 0u64;
-    let mut current = Square::try_from(square as u64).unwrap();
+    let mut current = Square::try_from(square as u8).unwrap();
 
     while let Some(next) = step_in_direction(current as u8, dir) {
         result |= Bitboard::from_square(next);
@@ -58,7 +58,7 @@ fn step_in_direction(square: u8, dir: u8) -> Option<Square> {
 
     if (0..8).contains(&new_rank) && (0..8).contains(&new_file) {
         let new_index = (new_rank * 8 + new_file) as u8;
-        Square::try_from(new_index as u64).ok()
+        Square::try_from(new_index as u8).ok()
     } else {
         None
     } 

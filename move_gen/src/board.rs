@@ -114,7 +114,7 @@ impl Board {
             if ch != '-' {
                 let bytes = parts[3].as_bytes();
                 let square = (bytes[1] - b'1') * 8 + (bytes[0] - b'a');
-                board.en_passant_square = Some(Square::try_from(square as u64).unwrap());
+                board.en_passant_square = Some(Square::try_from(square as u8).unwrap());
             }
         } 
 
@@ -157,8 +157,8 @@ impl Board {
     }
 
     /// Returns piece at a given index if it exists, else None
-    pub fn get_piece_at(&self, index: u64) -> Option<Piece> {
-        self.piece_lookup[index as usize]
+    pub fn get_piece_at(&self, index: usize) -> Option<Piece> {
+        self.piece_lookup[index]
     }
 
     /// Returns bitboard of all sliding pieces for color.
@@ -197,11 +197,11 @@ impl Board {
     }
 
     fn make_normal_move(&mut self, mve: &Move) {
-        self.pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u64); 
-        self.pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u64); 
+        self.pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u8); 
+        self.pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u8); 
 
         if let Some(captured_piece) = mve.captured {
-            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
+            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u8); 
         }
 
         if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && (self.move_changed_castling_rights[mve.color as usize][0] < 0) {
@@ -224,11 +224,11 @@ impl Board {
     }
 
     fn make_castle_move(&mut self, mve: &Move, kingside: bool) {
-        self.pieces[mve.color as usize][King as usize].clear_bit(mve.from as u64);
-        self.pieces[mve.color as usize][King as usize].set_bit(mve.to as u64);
+        self.pieces[mve.color as usize][King as usize].clear_bit(mve.from as u8);
+        self.pieces[mve.color as usize][King as usize].set_bit(mve.to as u8);
 
-        let rook_to_index = ROOK_CASTLING_DIRECTION[kingside as usize](Bitboard::from_square(mve.to)).trailing_zeros() as u64; 
-        let rook_from_index = ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][kingside as usize] as u64;
+        let rook_to_index = ROOK_CASTLING_DIRECTION[kingside as usize](Bitboard::from_square(mve.to)).trailing_zeros() as u8; 
+        let rook_from_index = ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][kingside as usize] as u8;
 
         self.pieces[mve.color as usize][Rook as usize].clear_bit(rook_from_index);
         self.pieces[mve.color as usize][Rook as usize].set_bit(rook_to_index); 
@@ -250,30 +250,30 @@ impl Board {
     }
 
     fn make_double_push_move(&mut self, mve: &Move) {
-        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
-        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64);
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u8);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u8);
 
         self.piece_lookup[mve.from as usize] = None;
         self.piece_lookup[mve.to as usize] = Some(Pawn);
 
         let to_index = mve.to as u8;
         let offset = OFFSET_SINGLE_PUSH[mve.color as usize] as i16;
-        let en_passant_index =  (to_index as i16 - offset) as u64;
+        let en_passant_index =  (to_index as i16 - offset) as u8;
 
         self.en_passant_square = Some(Square::try_from(en_passant_index).unwrap()); 
 
     }
 
     fn make_en_passant_move(&mut self, mve: &Move) {
-        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
-        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64); 
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u8);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u8); 
 
         self.piece_lookup[mve.from as usize] = None;
         self.piece_lookup[mve.to as usize] = Some(Pawn); 
 
         let to_index = mve.to as u8;
         let offset = OFFSET_SINGLE_PUSH[mve.color as usize] as i16;
-        let captured_piece_index = (to_index as i16 - offset) as u64;
+        let captured_piece_index = (to_index as i16 - offset) as u8;
 
         self.pieces[mve.color.opposite_color() as usize][Pawn as usize].clear_bit(captured_piece_index);
         self.piece_lookup[captured_piece_index as usize] = None;
@@ -281,11 +281,11 @@ impl Board {
     }
 
     fn make_promotion_move(&mut self, mve: &Move, promotion: Piece) {
-        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
-        self.pieces[mve.color as usize][promotion as usize].set_bit(mve.to as u64); 
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u8);
+        self.pieces[mve.color as usize][promotion as usize].set_bit(mve.to as u8); 
 
         if let Some(captured_piece) = mve.captured {
-            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
+            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u8); 
         }
 
         self.piece_lookup[mve.from as usize] = None;
@@ -309,21 +309,21 @@ impl Board {
 
     fn make_shallow_normal_move(&self, mve: &Move) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
-        copied_pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u64); 
-        copied_pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u64); 
+        copied_pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.from as u8); 
+        copied_pieces[mve.color as usize][mve.piece as usize].set_bit(mve.to as u8); 
         if let Some(captured_piece) = mve.captured {
-            copied_pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
+            copied_pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u8); 
         }
         copied_pieces
     }
 
     fn make_shallow_castle_move(&self, mve: &Move, kingside: bool) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
-        copied_pieces[mve.color as usize][King as usize].clear_bit(mve.from as u64);
-        copied_pieces[mve.color as usize][King as usize].set_bit(mve.to as u64);
+        copied_pieces[mve.color as usize][King as usize].clear_bit(mve.from as u8);
+        copied_pieces[mve.color as usize][King as usize].set_bit(mve.to as u8);
 
-        let rook_to_index = ROOK_CASTLING_DIRECTION[kingside as usize](Bitboard::from_square(mve.to)).trailing_zeros() as u64; 
-        let rook_from_index = ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][kingside as usize] as u64;
+        let rook_to_index = ROOK_CASTLING_DIRECTION[kingside as usize](Bitboard::from_square(mve.to)).trailing_zeros() as u8; 
+        let rook_from_index = ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][kingside as usize] as u8;
 
         copied_pieces[mve.color as usize][Rook as usize].clear_bit(rook_from_index);
         copied_pieces[mve.color as usize][Rook as usize].set_bit(rook_to_index); 
@@ -332,20 +332,20 @@ impl Board {
 
     fn make_shallow_double_push_move(&self, mve: &Move) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
-        copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
-        copied_pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64); 
+        copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u8);
+        copied_pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u8); 
         copied_pieces
         
     }
 
     fn make_shallow_en_passant_move(&self, mve: &Move) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
-        copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
-        copied_pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u64); 
+        copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u8);
+        copied_pieces[mve.color as usize][Pawn as usize].set_bit(mve.to as u8); 
 
         let to_index = mve.to as u8;
         let offset = OFFSET_SINGLE_PUSH[mve.color as usize] as i16;
-        let captured_piece_index = (to_index as i16 - offset) as u64;
+        let captured_piece_index = (to_index as i16 - offset) as u8;
 
         copied_pieces[mve.color.opposite_color() as usize][Pawn as usize].clear_bit(captured_piece_index);
         copied_pieces
@@ -354,11 +354,11 @@ impl Board {
 
     fn make_shallow_promotion_move(&self, mve: &Move, promotion: Piece) -> [[Bitboard; 6]; 2] {
         let mut copied_pieces = self.pieces.clone(); 
-        copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u64);
-        copied_pieces[mve.color as usize][promotion as usize].set_bit(mve.to as u64); 
+        copied_pieces[mve.color as usize][Pawn as usize].clear_bit(mve.from as u8);
+        copied_pieces[mve.color as usize][promotion as usize].set_bit(mve.to as u8); 
 
         if let Some(captured_piece) = mve.captured {
-            copied_pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u64); 
+            copied_pieces[mve.color.opposite_color() as usize][captured_piece as usize].clear_bit(mve.to as u8); 
         }
         copied_pieces
     }
@@ -381,11 +381,11 @@ impl Board {
 
     fn unmake_normal_move(&mut self, mve: Move) {
 
-        self.pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.to as u64); 
-        self.pieces[mve.color as usize][mve.piece as usize].set_bit(mve.from as u64); 
+        self.pieces[mve.color as usize][mve.piece as usize].clear_bit(mve.to as u8); 
+        self.pieces[mve.color as usize][mve.piece as usize].set_bit(mve.from as u8); 
 
         if let Some(captured_piece) = mve.captured {
-            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].set_bit(mve.to as u64); 
+            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].set_bit(mve.to as u8); 
         }
 
         if mve.piece == Rook && mve.from == ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][0] && 
@@ -412,11 +412,11 @@ impl Board {
     }
 
     fn unmake_castle_move(&mut self, mve: Move, kingside: bool) {
-        self.pieces[mve.color as usize][King as usize].clear_bit(mve.to as u64);
-        self.pieces[mve.color as usize][King as usize].set_bit(mve.from as u64);
+        self.pieces[mve.color as usize][King as usize].clear_bit(mve.to as u8);
+        self.pieces[mve.color as usize][King as usize].set_bit(mve.from as u8);
 
-        let rook_from_index = ROOK_CASTLING_DIRECTION[kingside as usize](Bitboard::from_square(mve.to)).trailing_zeros() as u64; 
-        let rook_to_index = ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][kingside as usize] as u64;
+        let rook_from_index = ROOK_CASTLING_DIRECTION[kingside as usize](Bitboard::from_square(mve.to)).trailing_zeros() as u8; 
+        let rook_to_index = ROOK_CASTLING_INITIAL_SQUARE[mve.color as usize][kingside as usize] as u8;
 
         self.pieces[mve.color as usize][Rook as usize].clear_bit(rook_from_index);
         self.pieces[mve.color as usize][Rook as usize].set_bit(rook_to_index); 
@@ -434,8 +434,8 @@ impl Board {
     }
 
     fn unmake_double_push_move(&mut self, mve: Move) {
-        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.to as u64);
-        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.from as u64);
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.to as u8);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.from as u8);
 
         self.piece_lookup[mve.to as usize] = None;
         self.piece_lookup[mve.from as usize] = Some(Pawn);
@@ -444,15 +444,15 @@ impl Board {
 
     fn unmake_en_passant_move(&mut self, mve: Move) {
 
-        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.to as u64);
-        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.from as u64); 
+        self.pieces[mve.color as usize][Pawn as usize].clear_bit(mve.to as u8);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.from as u8); 
 
         self.piece_lookup[mve.to as usize] = None;
         self.piece_lookup[mve.from as usize] = Some(Pawn); 
 
         let to_index = mve.to as u8;
         let offset = OFFSET_SINGLE_PUSH[mve.color as usize] as i16;
-        let captured_piece_index = (to_index as i16 - offset) as u64;
+        let captured_piece_index = (to_index as i16 - offset) as u8;
 
         self.pieces[mve.color.opposite_color() as usize][Pawn as usize].set_bit(captured_piece_index);
         self.piece_lookup[captured_piece_index as usize] = Some(Pawn);
@@ -461,11 +461,11 @@ impl Board {
 
     fn unmake_promotion_move(&mut self, mve: Move, promotion: Piece) {
 
-        self.pieces[mve.color as usize][promotion as usize].clear_bit(mve.to as u64);
-        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.from as u64); 
+        self.pieces[mve.color as usize][promotion as usize].clear_bit(mve.to as u8);
+        self.pieces[mve.color as usize][Pawn as usize].set_bit(mve.from as u8); 
 
         if let Some(captured_piece) = mve.captured {
-            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].set_bit(mve.to as u64); 
+            self.pieces[mve.color.opposite_color() as usize][captured_piece as usize].set_bit(mve.to as u8); 
         }
 
         self.piece_lookup[mve.from as usize] = Some(Pawn);
@@ -479,8 +479,8 @@ impl Board {
         let squares_cant_attack = CASTLING_SQUARES_CANT_BE_ATTACKED[color as usize][0]; 
         let square_1_attacked = is_attacked(&self.pieces, squares_cant_attack[0], color);
         let square_2_attacked = is_attacked(&self.pieces, squares_cant_attack[1], color);
-        let king_on_initial_squares = self.pieces[color as usize][King as usize].get_bit(KING_INITIAL_SQUARE[color as usize] as u64);
-        let rook_on_initial_square = self.pieces[color as usize][Rook as usize].get_bit(ROOK_CASTLING_INITIAL_SQUARE[color as usize][0] as u64); 
+        let king_on_initial_squares = self.pieces[color as usize][King as usize].get_bit(KING_INITIAL_SQUARE[color as usize] as u8);
+        let rook_on_initial_square = self.pieces[color as usize][Rook as usize].get_bit(ROOK_CASTLING_INITIAL_SQUARE[color as usize][0] as u8); 
         castling_right && !square_1_attacked && !square_2_attacked && squares_between_free && king_on_initial_squares && rook_on_initial_square
     }
 
@@ -490,8 +490,8 @@ impl Board {
         let squares_cant_attack = CASTLING_SQUARES_CANT_BE_ATTACKED[color as usize][1]; 
         let square_1_attacked = is_attacked(&self.pieces, squares_cant_attack[0], color);
         let square_2_attacked = is_attacked(&self.pieces, squares_cant_attack[1], color); 
-        let king_on_initial_squares = self.pieces[color as usize][King as usize].get_bit(KING_INITIAL_SQUARE[color as usize] as u64);
-        let rook_on_initial_square = self.pieces[color as usize][Rook as usize].get_bit(ROOK_CASTLING_INITIAL_SQUARE[color as usize][1] as u64); 
+        let king_on_initial_squares = self.pieces[color as usize][King as usize].get_bit(KING_INITIAL_SQUARE[color as usize] as u8);
+        let rook_on_initial_square = self.pieces[color as usize][Rook as usize].get_bit(ROOK_CASTLING_INITIAL_SQUARE[color as usize][1] as u8); 
         castling_right && !square_1_attacked && !square_2_attacked && squares_between_free && king_on_initial_squares && rook_on_initial_square
     }
 

@@ -307,7 +307,7 @@ impl GameState {
         for square in 0..64 {
             let piece = self.board.get_piece_lookup()[square]; 
             if piece.is_some() {
-                if self.board.get_piece_lists()[White as usize][piece.expect("Piece is some.") as usize].get_bit(square as u64) {
+                if self.board.get_piece_lists()[White as usize][piece.expect("Piece is some.") as usize].get_bit(square as u8) {
                     zobrist_hash ^= ZOBRIST_TABLE[White as usize][piece.expect("Piece is explicitly some") as usize][square as usize]; 
                 } else {
                     zobrist_hash ^= ZOBRIST_TABLE[Black as usize][piece.expect("Piece is explicitly some") as usize][square as usize];
@@ -357,7 +357,7 @@ impl GameState {
     /// Realize move from move_intent (info decoded from action)
     pub fn realize_move(&mut self, intent: MoveIntent) -> Result<Move, &'static str> {
         // Normal, Castle { kingside: bool }, En Passant, DoublePawnPush, Promotion { piece: Piece }
-        let piece = self.board.get_piece_at(intent.from() as u64).expect("move should be valid."); 
+        let piece = self.board.get_piece_at(intent.from() as usize).expect("move should be valid."); 
     
         let color = if GET_PIECE_BITBOARD[piece as usize](&self.board, Color::White) & intent.from().to_bitboard() != 0 {
             Color::White
@@ -387,10 +387,10 @@ impl GameState {
                 return Ok(Move::new_double_pawn_push(intent.from(), intent.to(), color)); 
             }
             if intent.from().to_bitboard() & PAWN_PROMOTION_RANK[color as usize] != 0 {
-                return Ok(Move::new_promotion(intent.from(), intent.to(), color, self.board.get_piece_at(intent.to() as u64), 
+                return Ok(Move::new_promotion(intent.from(), intent.to(), color, self.board.get_piece_at(intent.to() as usize), 
                 intent.promotion().expect("move should be valid"))); 
             }
-            if drow.abs() == 1 && dfile.abs() == 1 && self.board.get_piece_at(intent.to() as u64).is_none() {
+            if drow.abs() == 1 && dfile.abs() == 1 && self.board.get_piece_at(intent.to() as usize).is_none() {
                 return Ok(Move::new_en_passant(intent.from(), intent.to(), color)); 
             }
         }
@@ -398,9 +398,9 @@ impl GameState {
         Ok(Move::new_normal(
             intent.from(),
             intent.to(), 
-            self.board.get_piece_at(intent.from() as u64).expect("move should be valid"),
+            self.board.get_piece_at(intent.from() as usize).expect("move should be valid"),
             color, 
-            self.board.get_piece_at(intent.to() as u64))
+            self.board.get_piece_at(intent.to() as usize))
         )
     
     }

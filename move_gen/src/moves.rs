@@ -43,7 +43,7 @@ pub enum MoveType {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, TryFromPrimitive)]
-#[repr(u64)]
+#[repr(u8)]
 pub enum Square {
     A1 = 0, B1, C1, D1, E1, F1, G1, H1,
     A2,    B2, C2, D2, E2, F2, G2, H2,
@@ -65,7 +65,7 @@ impl Square {
     pub fn rank_of(self) -> u8 { (self as u8) >> 3 }
 
     pub fn is_empty(self, board: &Board) -> bool {
-        board.get_piece_at(self as u64).is_none()
+        board.get_piece_at(self as usize).is_none()
     }
 
 }
@@ -240,8 +240,8 @@ impl Move {
         let from_index = action & FROM_MASK;
         let to_index = action & TO_MASK;
 
-        let from = Square::try_from(from_index as u64).unwrap();
-        let to = Square::try_from(to_index as u64).unwrap();
+        let from = Square::try_from(from_index as u8).unwrap();
+        let to = Square::try_from(to_index as u8).unwrap();
 
         let moving_piece = match action & PIECE_MASK {
             0 => Some(Piece::Pawn),

@@ -108,9 +108,9 @@ pub fn decode_action(action: ActionID) -> Result<MoveIntent, &'static str> {
     let promo_piece = code_to_promo(promo); 
     let rem = id % PROMO_BUCKET;
     let from = rem / FROM_BUCKET; 
-    let from_square = Square::try_from(from as u64).unwrap();
+    let from_square = Square::try_from(from as u8).unwrap();
     let to = rem % FROM_BUCKET; 
-    let to_square = Square::try_from(to as u64).unwrap(); 
+    let to_square = Square::try_from(to as u8).unwrap(); 
     Ok(MoveIntent {
         from: from_square,
         to: to_square,

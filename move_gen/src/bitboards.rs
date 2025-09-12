@@ -43,9 +43,9 @@ pub const COLOR_MASK: u32 = 0b1_000_0_00_000_000_000000_000000;
 pub type Bitboard = u64; 
 
 pub trait BitboardExt {
-    fn clear_bit(&mut self, index: u64);
-    fn set_bit(&mut self, index: u64);
-    fn get_bit(self, index: u64) -> bool;
+    fn clear_bit(&mut self, index: u8);
+    fn set_bit(&mut self, index: u8);
+    fn get_bit(self, index: u8) -> bool;
     fn shift_north(&mut self);
     fn shift_south(&mut self);
     fn shift_east(&mut self);
@@ -57,9 +57,9 @@ pub trait BitboardExt {
 }
 
 impl BitboardExt for Bitboard {
-    fn clear_bit(&mut self, index: u64) { *self &= !(1u64 << index);  }
-    fn set_bit(&mut self, index: u64) { *self |= 1u64 << index; }
-    fn get_bit(self, index: u64) -> bool { (self >> index) & 1 == 1 }
+    fn clear_bit(&mut self, index: u8) { *self &= !(1u64 << index);  }
+    fn set_bit(&mut self, index: u8) { *self |= 1u64 << index; }
+    fn get_bit(self, index: u8) -> bool { (self >> index) & 1 == 1 }
 
     fn shift_north(&mut self) { *self = (*self & !RANK_8) << 8 }
     fn shift_south(&mut self)  { *self = (*self & !RANK_1) >> 8 }

@@ -169,7 +169,7 @@ impl TensorBuffer {
     fn write_plane(mut bb: Bitboard, index: usize, plane: &mut Vec<f32>) { 
         while bb != 0 {
             let sq = bb.trailing_zeros() as usize; 
-            bb.clear_bit(sq as u64);
+            bb.clear_bit(sq as u8);
             plane[index * 64 + sq] = 1.0; 
         }
 
