@@ -3,7 +3,9 @@ use crate::weighted_sampler::WeightedSampler;
 use rand::rngs::ThreadRng;
 use rand::thread_rng; 
 use crate::GameState;
-use crate::action_space::{Action, ActionID}; 
+use crate::action_space::{Action, ActionID, num_actions}; 
+use crate::tensor::{TensorBuffer, FeatureSchema}; 
+use crate::replay_buffer::{ReplayBuffer, ReplayBufferEntry}; 
 
 const PUCB_C: f32 = 1.0; // c in upper confidence bound calculation for MCTS -> higher encourages exploration
 
@@ -19,7 +21,8 @@ pub struct Node {
     legal_actions: Vec<Action>,
     unvisited_actions: WeightedSampler<Action>,
     total_visit_count: u32,
-    rng: ThreadRng
+    rng: ThreadRng,
+    taken_action: Option<ActionID>,
 }
 
 impl Node {
@@ -71,7 +74,8 @@ impl Node {
         let rng = thread_rng(); 
 
         Node {
-            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count, rng
+            game, prior, value, visit_count, children, parent, zobrist_hash, 
+            legal_actions, unvisited_actions, total_visit_count, rng, taken_action: None,
         }
     }
 
@@ -106,7 +110,8 @@ impl Node {
         let rng = thread_rng();
 
         Ok(Node {
-            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count, rng
+            game, prior, value, visit_count, children, parent, zobrist_hash, 
+            legal_actions, unvisited_actions, total_visit_count, rng, taken_action: None,
         })
     }
 
@@ -141,7 +146,8 @@ impl Node {
         let rng = thread_rng();
 
         Node {
-            game, prior, value, visit_count, children, parent, zobrist_hash, legal_actions, unvisited_actions, total_visit_count, rng
+            game, prior, value, visit_count, children, parent, zobrist_hash, 
+            legal_actions, unvisited_actions, total_visit_count, rng, taken_action: None,
         }
     }
 
@@ -189,6 +195,35 @@ impl Node {
         return Ok((game, Some((parent_hash, id))))
     }
 
+    /// Returns the hash of the action taken 
+    pub fn take_action(&mut self) -> Result<u64, &'static str> {
+        if let Some((most_visited_action, _)) = self.visit_count.iter().max_by_key(|&(_, v)| v) {
+            self.taken_action = Some(*most_visited_action); 
+            return Ok(*self.children.get(most_visited_action).expect("ActionID should exist."))
+        } else {
+            return Err("MCTS must have been run.")
+        }
+    }
+
+    /// Turns a node into a replay buffer entry
+    pub fn to_replay_buffer_entry(&self) -> Option<ReplayBufferEntry> {
+        let mut state = TensorBuffer::new(FeatureSchema::new()); 
+        state.write_from(&self.game);
+        let mut simulated_policy = vec![0.0f32; num_actions() as usize]; 
+
+        for (actionid, visit_count) in self.visit_count.iter() {
+            simulated_policy[actionid.0 as usize] = (*visit_count as f32) / (self.total_visit_count as f32); 
+        }
+
+        if self.taken_action.is_none() {
+            return None
+        }
+
+        let value = self.value(self.taken_action.unwrap()); 
+        Some(ReplayBufferEntry::new(state, simulated_policy, value))
+
+    }
+
 }
 
 pub struct MCTS {
@@ -200,6 +235,13 @@ pub struct MCTS {
 impl MCTS {
     pub fn tree(&self) -> &HashMap<u64, Node> {&self.tree}
     pub fn root(&self) -> u64 {self.root}
+    pub fn get_node(&self, hash: u64) -> Result<&Node, &'static str> {
+        if let Some(node) = self.tree.get(&hash) {
+            return Ok(node)
+        } else {
+            return Err("Hash is invalid.")
+        }
+    }
 
     pub fn new_default() -> Self {
         let root_node = Node::new_default(); 
@@ -258,6 +300,21 @@ impl MCTS {
         let hash = game.current_hash(); 
         let node = Node::from_game_state(game, Some(parent), &priors).unwrap(); 
         self.tree.insert(hash, node); 
+    }
+
+    pub fn to_replay_buffer(&self) -> ReplayBuffer {
+        let mut buffer = ReplayBuffer::new(); 
+        let mut curr_node = self.get_node(self.root).expect("Root exists"); 
+        let mut entry = curr_node.to_replay_buffer_entry().unwrap(); 
+        buffer.append(entry);
+
+        while let Some(taken) = curr_node.taken_action {
+            let child_hash = *curr_node.children.get(&taken).unwrap();
+            curr_node = self.get_node(child_hash).expect("Child node should exist");
+            entry = curr_node.to_replay_buffer_entry().unwrap();
+            buffer.append(entry);  
+        }
+        buffer
     }
 
 }

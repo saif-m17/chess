@@ -1,7 +1,7 @@
 use crate::moves::{Move, MoveType, Piece, Square};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub struct ActionID(u32); 
+pub struct ActionID(pub u32); 
 
 pub const ACTION_SPACE_VERSION: u32 = 1;
 
