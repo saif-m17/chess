@@ -38,4 +38,8 @@ impl ReplayBuffer {
         let sample = self.buf.choose(&mut self.rng);
         sample 
     }
+
+    pub fn sample_batch(&mut self, batch_size: usize) -> Vec<&ReplayBufferEntry> {
+        self.buf.choose_multiple(&mut self.rng, batch_size).collect()
+    }
 }
